@@ -1,0 +1,31 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "com.byterax.dragon.read"
+    compileSdkVersion 37
+    buildToolsVersion '37.0.0'
+
+    defaultConfig {
+        applicationId "com.byterax.dragon.read"
+        minSdkVersion 26
+        targetSdkVersion 37
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly "io.github.libxposed:api:102.0.0"
+    // DexKit: 运行时按特征签名（方法名 / 方法体内引用字符串 / 字段类型）定位番茄小说被混淆的目标方法，
+    // 对应还原报告中的 hook ①③④⑤⑥（"全版本通杀"）。与 libxposed 的 compileOnly 不同，DexKit 是
+    // implementation —— 需把 libdexkit.so 打包进 APK，由目标进程在运行时加载。许可证 LGPL-3.0。
+    implementation "org.luckypray:dexkit:2.0.7"
+}
