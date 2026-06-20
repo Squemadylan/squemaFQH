@@ -27,19 +27,30 @@ import io.github.libxposed.api.XposedModuleInterface;
 /**
  * 番茄免费小说（{@code com.dragon.read}）hook 入口。
  *
- * <p>还原 HookVip v4.1.1 中 {@code defpackage.v10} 的 6 条 hook 挂载点（报告：
- * Anti/HookVip/com.dragon.read-HOOK-REPORT.md）。目标方法大多在番茄小说被混淆，
- * 故用 DexKit 按"方法名 / 方法体内引用字符串 / 字段类型"特征匹配定位，实现"全版本通杀"。
+ * <p>还原 HookVip <b>v4.1.6</b> 中 {@code top.hookvip.pro.core.C1078.mo656()} 注册的全部 hook 挂载点
+ * （分析报告：{@code Anti/HookVip/com.dragon.read-hook-analysis.md}，回调分发器
+ * {@code C1992} 的 case 12–16 属于番茄小说）。目标方法大多在番茄小说被混淆，故用 DexKit 按
+ * "方法名 / 方法体内引用字符串 / 字段类型"特征签名定位，实现"全版本通杀"。
+ *
+ * <p>下表把本模块的 6 条 hook 与 HookVip v4.1.6 的注册流程一一对应。每行的"定位特征"即 v4.1.6
+ * {@code C0827(int)} DexKit 查询构建器（经委托链）解析到的最终签名，已通过解密 v4.1.6 的
+ * AES-CBC+XOR 字符串常量逐条核对一致：
  *
  * <table>
- *   <tr><th>#</th><th>目标</th><th>定位特征</th><th>行为</th></tr>
- *   <tr><td>①</td><td>关闭 Lynx 横幅广告</td><td>name == "willShowLynxBanner"</td><td>返回 false</td></tr>
- *   <tr><td>②</td><td>解锁会员</td><td>com.dragon.read.user.model.VipInfoModel 全部构造函数</td><td>篡改构造参数</td></tr>
- *   <tr><td>③</td><td>屏蔽个人页推广广告位</td><td>name == "canThisPositionShow"</td><td>after 改返回对象字段</td></tr>
- *   <tr><td>④</td><td>伪造关注/粉丝/获赞</td><td>引用 "followUserNum = %d, fansNum = %d, ..."</td><td>before 改字段</td></tr>
- *   <tr><td>⑤</td><td>伪造昵称/头像</td><td>引用 "doSyncInitUserInfo:%s" + 含 CommentUserStrInfo 字段的类</td><td>before 改字段</td></tr>
- *   <tr><td>⑥</td><td>清空推荐用户</td><td>引用 "获取推荐用户数据成功"（唯一匹配）</td><td>before args[0] = null</td></tr>
+ *   <tr><th>#</th><th>目标</th><th>定位特征（= v4.1.6 C0827 最终签名）</th><th>行为</th><th>v4.1.6 回调</th></tr>
+ *   <tr><td>①</td><td>关闭 Lynx 横幅广告</td><td>name == "willShowLynxBanner"（C1078 先调 C0827(19)→case19→m2229→case11）</td><td>返回 false</td><td>—（注册前 deoptimize 标记，C0827(19)）</td></tr>
+ *   <tr><td>②</td><td>解锁会员</td><td>com.dragon.read.user.model.VipInfoModel 全部构造函数</td><td>篡改构造参数</td><td>C1992 case 12</td></tr>
+ *   <tr><td>④</td><td>伪造关注/粉丝/获赞</td><td>引用 "followUserNum = %d, fansNum = %d, ..."（C0827(17)→case17→m2227→case12→m2223）</td><td>before 改字段</td><td>C1992 case 13</td></tr>
+ *   <tr><td>⑤a</td><td>伪造昵称/头像（同步入口）</td><td>引用 "doSyncInitUserInfo:%s"（C0827(18)→case18→m2228→case13→m2224）</td><td>before 改字段</td><td>C1992 case 14</td></tr>
+ *   <tr><td>⑤b</td><td>伪造昵称/头像（评论用户）</td><td>含 com.dragon.read.rpc.model.CommentUserStrInfo 字段的类（C0355(2) 字段类型查询，该类全部方法）</td><td>before 改字段</td><td>C1992 case 15</td></tr>
+ *   <tr><td>③</td><td>屏蔽个人页推广广告位</td><td>name == "canThisPositionShow"（C1078 step3：C0827(10)→m2225 命名匹配）</td><td>after：返回对象 leftTime 拉满、extraInfo←新建 VipPromotionStrategyExtraInfo、text 清空</td><td>C0826(5)=m2202 + C0068.m711</td></tr>
+ *   <tr><td>⑥</td><td>清空推荐用户</td><td>引用 "获取推荐用户数据成功"（C0827(20)→case20→m2230→case21→m2231）</td><td>before args[0] = null</td><td>C1992 case 16</td></tr>
  * </table>
+ *
+ * <p>字段级核对（解密自 C1992.m457x）：case 13 写 {@code followUserNum/fansNum/recvDiggNum}=
+ * 5200000/13140000/9990000；case 14 写 {@code userName/avatarUrl}；case 15 写
+ * {@code userName/userAvatar}。本模块 {@link #FAKE_FOLLOW_NUM}/{@link #FAKE_FANS_NUM}/
+ * {@link #FAKE_DIGG_NUM} 与上述社交数值一致；昵称/头像用本模块自有占位值替代 v4.1.6 的品牌定制串。
  */
 public class HookInit extends XposedModule {
     private static final String TAG = "FanQieHook";
@@ -147,9 +158,12 @@ public class HookInit extends XposedModule {
     // ============================ Hook ③ —— 屏蔽个人页推广广告位 ============================
 
     /**
-     * 对 {@code canThisPositionShow} 挂 after 回调（报告 v10.v() + s0.c()）：当广告位所属页面
-     * 为 {@code PromotionFromUserPage} 时，把返回对象的 {@code leftTime} 拉满、{@code text} 清空，
-     * 等效屏蔽该页面推广广告。
+     * 对 {@code canThisPositionShow} 挂 after 回调（v4.1.6 {@code C1078.mo656} step3：
+     * {@code C0827(10)}→m2225 命名匹配 → {@code m3233}(after-hook) + {@code C0826(5)=m2202}）：
+     * 当 {@code args[0]=="PromotionFromUserPage" && args[1]==true} 时，把返回对象的
+     * {@code leftTime} 拉满、{@code extraInfo} 指向一个新建的
+     * {@code com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo}（其 {@code leftTime} 同样拉满）、
+     * {@code text} 清空，等效屏蔽该页面推广广告。详见 {@link #patchPromotionResult}。
      */
     private void hookAdPosition(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
         Method method = findFirstNonAbstractMethodByName(bridge, classLoader, "canThisPositionShow");
@@ -163,7 +177,7 @@ public class HookInit extends XposedModule {
                     Object result = chain.proceed();
                     // canThisPositionShow(pageName, show, ...)：命中个人页推广位时处理其返回对象。
                     if (matchesPromotionPage(chain.getArgs())) {
-                        patchPromotionResult(result);
+                        patchPromotionResult(result, classLoader);
                     }
                     return result;
                 });
@@ -178,14 +192,39 @@ public class HookInit extends XposedModule {
         return args.size() > 1 && Boolean.TRUE.equals(args.get(1));
     }
 
-    private static void patchPromotionResult(Object result) {
+    private static void patchPromotionResult(Object result, ClassLoader classLoader) {
         if (result == null) {
             return;
         }
         try {
+            // 忠于 v4.1.6 C0068.m711（由 C0826.m2202 在命中 PromotionFromUserPage 时触发）：
+            //   1) 新建一个 com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo（无参构造），
+            //      把它的 leftTime 字段拉满；
+            //   2) 把返回对象的 extraInfo 指向这个新对象（v4.1.6 的标记位）、leftTime 拉满、text 清空。
+            // 原实现误把 extraInfo 指向 result 自身（自引用），既非 v4.1.6 行为也无标记语义，故修正。
+            Object extraInfo = newExtraInfo(classLoader);
+            if (extraInfo != null) {
+                setField(extraInfo, "leftTime", FAKE_EXPIRE_MS / 1000L); // VipPromotionStrategyExtraInfo.leftTime
+                setField(result, "extraInfo", extraInfo);                // 标记位（指向新建的 ExtraInfo）
+            }
             setField(result, "leftTime", FAKE_EXPIRE_MS / 1000L); // 剩余时间拉满
-            setField(result, "text", "");                        // 广告文案清空
+            setField(result, "text", "");                         // 广告文案清空
         } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    /**
+     * 反射新建一个 {@code com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo}（无参构造）。
+     * 与 v4.1.6 {@code C0826.m2202} 里 {@code AbstractC1392.m3216(Class.forName(name), new Object[0], ...)}
+     * 等价：用目标进程 ClassLoader 加载该类、走无参构造、返回实例。类不存在时返回 null（降级为不写 extraInfo）。
+     */
+    private static Object newExtraInfo(ClassLoader classLoader) {
+        try {
+            Class<?> clazz = Class.forName(
+                    "com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo", false, classLoader);
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException ignored) {
+            return null;
         }
     }
 
@@ -303,8 +342,45 @@ public class HookInit extends XposedModule {
     // ============================ DexKit 辅助 =============================
 
     private DexKitBridge createDexKitBridge(ClassLoader classLoader) {
+        // DexKit 2.x 不会自动加载 libdexkit.so —— 必须由调用方先 System.loadLibrary("dexkit")。
+        // 否则 nativeInitDexKitByClassLoader 抛 UnsatisfiedLinkError（"is the library loaded?"）。
+        // 在 Xposed 目标进程里加载模块自带的 native lib 有两条路径：
+        //   1) System.loadLibrary("dexkit")：多数框架（LSPosed）会把模块 APK 的 lib 加入目标进程库搜索路径；
+        //   2) 失败回退：从模块 APK 的 nativeLibraryDir 用绝对路径 System.load。
+        ensureDexKitNativeLoaded();
         // create(ClassLoader, boolean)：直接用目标进程 ClassLoader 解析 dex，无需 APK 路径。
         return DexKitBridge.create(classLoader, true);
+    }
+
+    private static final AtomicBoolean DEXKIT_LIB_LOADED = new AtomicBoolean(false);
+
+    private void ensureDexKitNativeLoaded() {
+        if (DEXKIT_LIB_LOADED.get()) {
+            return;
+        }
+        synchronized (DEXKIT_LIB_LOADED) {
+            if (DEXKIT_LIB_LOADED.get()) {
+                return;
+            }
+            try {
+                System.loadLibrary("dexkit");
+                DEXKIT_LIB_LOADED.set(true);
+                log(Log.INFO, TAG, "libdexkit.so loaded via loadLibrary");
+                return;
+            } catch (UnsatisfiedLinkError primary) {
+                // 回退：取模块 APK 的 nativeLibraryDir，按绝对路径加载本机库。
+                try {
+                    String dir = getModuleApplicationInfo().nativeLibraryDir;
+                    System.load(dir + "/libdexkit.so");
+                    DEXKIT_LIB_LOADED.set(true);
+                    log(Log.INFO, TAG, "libdexkit.so loaded via absolute path: " + dir);
+                } catch (Throwable fallback) {
+                    log(Log.ERROR, TAG, "Failed to load libdexkit.so", fallback);
+                    throw new UnsatisfiedLinkError(
+                            "Could not load libdexkit.so: " + primary.getMessage());
+                }
+            }
+        }
     }
 
     /** 按方法名定位，返回首个非抽象实现（报告 v10.u() 的 firstNonAbstractMethod 语义）。 */

@@ -24,7 +24,7 @@ FanQieHook 是一个 Xposed 模块，用于 hook 番茄小说（包名 `com.drag
 
 ### DexKit 依赖（用于还原 hook ①③④⑤⑥）
 
-本项目引入 `org.luckypray:dexkit`（当前 `2.0.7`，`implementation`，LGPL-3.0）用于在番茄小说被混淆的 dex 里按**特征签名**定位目标方法，对应还原报告（`Anti/HookVip/com.dragon.read-HOOK-REPORT.md`）中的 hook ①③④⑤⑥，实现"全版本通杀"：
+本项目引入 `org.luckypray:dexkit`（当前 `2.0.7`，`implementation`，LGPL-3.0）用于在番茄小说被混淆的 dex 里按**特征签名**定位目标方法，对应还原报告（`Anti/HookVip/com.dragon.read-hook-analysis.md`，即 HookVip **v4.1.6** 中 `C1078.mo656()` 的注册流程，回调分发器 `C1992` 的 case 12–16）中的 hook ①③④⑤⑥，实现"全版本通杀"。v4.1.6 的 DexKit 查询经 AES-CBC+XOR 解密后，与本模块使用的签名逐条核对一致：
 
 - 按方法名定位（`willShowLynxBanner` / `canThisPositionShow`）—— 类名混淆但方法名保留
 - 按方法体内引用的字符串定位（`"followUserNum = %d..."` / `"doSyncInitUserInfo:%s"` / `"获取推荐用户数据成功"`）
