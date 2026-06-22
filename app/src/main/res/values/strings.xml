@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">番茄Hook</string>
-    <string name="xposed_activated">"Xposed: Activated"</string>
-    <string name="xposed_unactivated">"Xposed: Unactivated"</string>
+    <string name="app_name" translatable="false">番茄红果Hook</string>
+    <string name="status_channel_ready">Hook 通道已连接</string>
+    <string name="status_channel_off">Hook 通道未连接</string>
+    <string name="status_runtime_summary">libxposed:%1$s / Zygisk:%2$s / root:%3$s</string>
+    <string name="status_service_off">未检测到 libxposed / Zygisk / root</string>
+    <string name="status_hint">LSPosed / Zygisk / root 至少需要一个。如果系统确实装着但仍显示灰，请检查 apk 是否被加密或 SELinux 拒绝 stat 路径。</string>
 </resources>

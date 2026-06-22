@@ -1,16 +1,22 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.byterax.dragon.read"
+    namespace "com.byterax.phoenix.read"
     compileSdkVersion 37
     buildToolsVersion '37.0.0'
 
+    buildFeatures {
+        aidl true
+        buildConfig true
+    }
+
     defaultConfig {
-        applicationId "com.byterax.dragon.read"
+        applicationId "com.byterax.phoenix.read"
         minSdkVersion 26
         targetSdkVersion 37
-        versionCode 1
-        versionName "1.0"
+        versionCode 19
+        versionName "1.6.3"
+        buildConfigField "int", "SERVICE_VERSION", "1"
     }
 
     buildTypes {
@@ -23,9 +29,17 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    // AndroidX annotation —— libxposed:service 传递依赖。仅这一个 androidx 工件,保持最小依赖。
+    implementation "androidx.annotation:annotation:1.7.1"
     compileOnly "io.github.libxposed:api:102.0.0"
-    // DexKit: 运行时按特征签名（方法名 / 方法体内引用字符串 / 字段类型）定位番茄小说被混淆的目标方法，
-    // 对应还原报告中的 hook ①③④⑤⑥（"全版本通杀"）。与 libxposed 的 compileOnly 不同，DexKit 是
-    // implementation —— 需把 libdexkit.so 打包进 APK，由目标进程在运行时加载。许可证 LGPL-3.0。
+    compileOnly "de.robv.android.xposed:api:82"
+    // libxposed service (Modern API 101) — 用于模块 app 检测自身激活状态。
+    // 框架会在把本模块装入 scope 内的进程时,通过 binder 把 XposedService 发送到模块 app。
+    // 模块 app 拿到 service 后可调用 getScope()/getFrameworkName() 等。
+    // 注意：服务库必须用 implementation（不能 compileOnly），因为它在模块 app 进程里运行。
+    implementation "io.github.libxposed:service:101.0.0"
+    // DexKit: 运行时按特征签名（方法名 / 方法体内引用字符串 / 字段类型）定位红果短剧被混淆的目标方法。
+    // 与 libxposed 的 compileOnly 不同，DexKit 是 implementation —— 需把 libdexkit.so 打包进 APK，
+    // 由目标进程在运行时加载。许可证 LGPL-3.0。
     implementation "org.luckypray:dexkit:2.2.0"
 }

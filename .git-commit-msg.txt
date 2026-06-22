@@ -1,0 +1,12 @@
+feat: dual-target module (FanQie + HongGuo) under com.byterax.phoenix.read
+
+- Add red fruit short drama (com.phoenix.read) hook alongside fanqie novel
+- Inject user name as 调教司
+- Switch to applicationId com.byterax.phoenix.read
+- Add status card UI driven by RuntimeDetector (libxposed / Zygisk / root)
+- Add AIDL + ContentProvider IPC channel referencing HMA design
+- Add classic Xposed entry for system_server bootstrap
+- Update scope.list to include android
+- Update README for v1.6.3 (root: true verified on APatch + Zygisk LSPosed)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

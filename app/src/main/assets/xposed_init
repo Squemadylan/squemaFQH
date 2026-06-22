@@ -1,2 +1,1 @@
-com.byterax.phoenix.read.HookInit
 com.byterax.phoenix.read.xposed.SystemHookEntry

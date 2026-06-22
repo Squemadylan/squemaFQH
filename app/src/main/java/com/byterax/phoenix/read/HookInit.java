@@ -1,4 +1,4 @@
-package com.byterax.dragon.read;
+package com.byterax.phoenix.read;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -20,68 +20,79 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.byterax.phoenix.read.xposed.SystemBootstrap;
+import com.byterax.phoenix.read.HookStatusFiles;
+
 import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 import io.github.libxposed.api.XposedModuleInterface;
 
 /**
- * 番茄免费小说（{@code com.dragon.read}）hook 入口。
+ * Hook entry for ???? (com.phoenix.read) SVIP unlock + name forge.
  *
- * <p>还原 HookVip <b>v4.1.6</b> 中 {@code top.hookvip.pro.core.C1078.mo656()} 注册的全部 hook 挂载点
- * （分析报告：{@code Anti/HookVip/com.dragon.read-hook-analysis.md}，回调分发器
- * {@code C1992} 的 case 12–16 属于番茄小说）。目标方法大多在番茄小说被混淆，故用 DexKit 按
- * "方法名 / 方法体内引用字符串 / 字段类型"特征签名定位，实现"全版本通杀"。
+ * <p>???? internally reuses ???? (com.dragon.read) core classes ? verified via
+ * dexdump on classes13.dex: VipInfoModel, VipInfo, VipCommonSubType all live under
+ * com.dragon.read.*. VipInfoModel constructor signature is identical:
+ * (String, String, String, boolean, boolean, int, boolean, VipCommonSubType)
+ *  i.e. (expireTime, isVip, leftTime, isAutoCharge, isUnionVip, unionSource, isAdVip, subType).
  *
- * <p>下表把本模块的 6 条 hook 与 HookVip v4.1.6 的注册流程一一对应。每行的"定位特征"即 v4.1.6
- * {@code C0827(int)} DexKit 查询构建器（经委托链）解析到的最终签名，已通过解密 v4.1.6 的
- * AES-CBC+XOR 字符串常量逐条核对一致：
- *
- * <table>
- *   <tr><th>#</th><th>目标</th><th>定位特征（= v4.1.6 C0827 最终签名）</th><th>行为</th><th>v4.1.6 回调</th></tr>
- *   <tr><td>①</td><td>关闭 Lynx 横幅广告</td><td>name == "willShowLynxBanner"（C1078 先调 C0827(19)→case19→m2229→case11）</td><td>返回 false</td><td>—（注册前 deoptimize 标记，C0827(19)）</td></tr>
- *   <tr><td>②</td><td>解锁会员</td><td>com.dragon.read.user.model.VipInfoModel 全部构造函数</td><td>篡改构造参数</td><td>C1992 case 12</td></tr>
- *   <tr><td>④</td><td>伪造关注/粉丝/获赞</td><td>引用 "followUserNum = %d, fansNum = %d, ..."（C0827(17)→case17→m2227→case12→m2223）</td><td>before 改字段</td><td>C1992 case 13</td></tr>
- *   <tr><td>⑤a</td><td>伪造昵称/头像（同步入口）</td><td>引用 "doSyncInitUserInfo:%s"（C0827(18)→case18→m2228→case13→m2224）</td><td>before 改字段</td><td>C1992 case 14</td></tr>
- *   <tr><td>⑤b</td><td>伪造昵称/头像（评论用户）</td><td>含 com.dragon.read.rpc.model.CommentUserStrInfo 字段的类（C0355(2) 字段类型查询，该类全部方法）</td><td>before 改字段</td><td>C1992 case 15</td></tr>
- *   <tr><td>③</td><td>屏蔽个人页推广广告位</td><td>name == "canThisPositionShow"（C1078 step3：C0827(10)→m2225 命名匹配）</td><td>after：返回对象 leftTime 拉满、extraInfo←新建 VipPromotionStrategyExtraInfo、text 清空</td><td>C0826(5)=m2202 + C0068.m711</td></tr>
- *   <tr><td>⑥</td><td>清空推荐用户</td><td>引用 "获取推荐用户数据成功"（C0827(20)→case20→m2230→case21→m2231）</td><td>before args[0] = null</td><td>C1992 case 16</td></tr>
- * </table>
- *
- * <p>字段级核对（解密自 C1992.m457x）：case 13 写 {@code followUserNum/fansNum/recvDiggNum}=
- * 5200000/13140000/9990000；case 14 写 {@code userName/avatarUrl}；case 15 写
- * {@code userName/userAvatar}。本模块 {@link #FAKE_FOLLOW_NUM}/{@link #FAKE_FANS_NUM}/
- * {@link #FAKE_DIGG_NUM} 与上述社交数值一致；昵称/头像用本模块自有占位值替代 v4.1.6 的品牌定制串。
+ * <p>This module loads those classes from the target process (com.phoenix.read) ClassLoader
+ * and hooks them, equivalent to reusing the FanQieHook logic.
  */
 public class HookInit extends XposedModule {
-    private static final String TAG = "FanQieHook";
-    private static final String TARGET_PACKAGE = "com.dragon.read";
+    private static final String TAG = "SquemaFQHook";
+
+    // Target packages: ???? (full hook set) + ???? (SVIP + name only).
+    // ???? internally reuses ??'s com.dragon.read.* core classes ? verified by
+    // dexdump. The VipInfoModel constructor signature is identical:
+    //   (String,String,String,boolean,boolean,int,boolean,VipCommonSubType)
+    //  = (expireTime,isVip,leftTime,isAutoCharge,isUnionVip,unionSource,isAdVip,subType)
+    private static final String PKG_FANQIE = "com.dragon.read";
+    private static final String PKG_HONGGUO = "com.phoenix.read";
+
     private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
 
-    // —— 关键常量（魔法数字，源自 HookVip 报告）——
-    // 113143670061000L 毫秒 ≈ 5355 年。原始 hook 把构造参数 expireTime/leftTime 设为该值的秒级形式。
+    // 113143670061000L ms ? 5355 years. Reported magic number from HookVip.
     private static final long FAKE_EXPIRE_MS = 113143670061000L;
     private static final String FAKE_EXPIRE_SEC = String.valueOf(FAKE_EXPIRE_MS / 1000L);
 
-    // 个人页社交数据炫耀值（报告 §1）
+    // ??? (per user request). Avatar not hooked.
+    private static final String FAKE_USER_NAME = "\u8c03\u6559\u53f8";
+    private static final String FAKE_AVATAR_URL = "";
+
+    // Social stats (used by ?? only ? ?? doesn't expose these methods/strings).
     private static final int FAKE_FOLLOW_NUM = 5200000;
     private static final int FAKE_FANS_NUM = 13140000;
     private static final int FAKE_DIGG_NUM = 9990000;
 
-    // hook ⑤ 伪造的昵称/头像。HookVip 原用其自带的 l90.x()/l90.s() 品牌定制字符串，
-    // 这里用本模块自有占位值替代（属装饰性，非功能关键）。
-    private static final String FAKE_USER_NAME = "番茄VIP用户";
-    private static final String FAKE_AVATAR_URL = "https://p3-pc.douyinpic.com/img/fanqie-hook-avatar-placeholder.png";
+    @Override
+    public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) {
+        Log.i(TAG, "onModuleLoaded process=" + param.getProcessName());
+        HookStatusFiles.markSystemReady();
+    }
 
     @Override
     public void onPackageReady(XposedModuleInterface.PackageReadyParam param) {
-        if (!TARGET_PACKAGE.equals(param.getPackageName())) {
-            return;
+        String pkg = param.getPackageName();
+        if (PKG_FANQIE.equals(pkg)) {
+            HookStatusFiles.markTargetHooked(pkg);
+            installHooks(PKG_FANQIE, param.getClassLoader(), /*fullSet=*/ true);
+        } else if (PKG_HONGGUO.equals(pkg)) {
+            HookStatusFiles.markTargetHooked(pkg);
+            installHooks(PKG_HONGGUO, param.getClassLoader(), /*fullSet=*/ false);
         }
-        installAllHooks(param.getClassLoader());
     }
 
-    private void installAllHooks(ClassLoader classLoader) {
-        // 每条 hook 独立 try/catch：一条失败不影响其余。DexKit 桥用于 ①③④⑤⑥（②靠具名类反射即可）。
+    /**
+     * Install hooks for the given target package.
+     *
+     * <ul>
+     *   <li>fullSet=true  ? ????: all 6 hooks (SVIP + ads + social + name)</li>
+     *   <li>fullSet=false ? ????: SVIP unlock + name forge only
+     *     (the other 4 hooks' target methods are not exposed in the short-video player UI)</li>
+     * </ul>
+     */
+    private void installHooks(String pkg, ClassLoader classLoader, boolean fullSet) {
         DexKitBridge dexKit = null;
         try {
             dexKit = createDexKitBridge(classLoader);
@@ -89,24 +100,69 @@ public class HookInit extends XposedModule {
             log(Log.ERROR, TAG, "Failed to init DexKit bridge", t);
         }
 
-        safeHook("VipInfoModel (解锁会员)", () -> hookVipModel(classLoader));
-        if (dexKit != null) {
-            final DexKitBridge bridge = dexKit;
-            safeHook("willShowLynxBanner (关闭横幅广告)", () -> hookLynxBanner(bridge, classLoader));
-            safeHook("canThisPositionShow (屏蔽推广广告位)", () -> hookAdPosition(bridge, classLoader));
-            safeHook("社交数据伪造", () -> hookSocialStats(bridge, classLoader));
-            safeHook("昵称/头像伪造", () -> hookUserNameAvatar(bridge, classLoader));
-            safeHook("推荐用户清空", () -> hookRecommendUsers(bridge, classLoader));
+        // Activation flag ? write a file the module app reads. This works even when
+        // LSPosed's XposedService channel is unavailable (e.g. no LSPosed Manager
+        // package installed). The hook process and the module app process are
+        // different processes, so we use a public app-specific external file.
+        writeActivationFlag(pkg, fullSet);
+
+        // ? Unlock VIP ? works on both targets (VipInfoModel is reused by ??).
+        safeHook("[" + pkg + "] VipInfoModel (unlock SVIP)", () -> hookVipModel(classLoader));
+
+        if (fullSet) {
+            // ???? only: 6-hook set
+            if (dexKit != null) {
+                final DexKitBridge bridge = dexKit;
+                safeHook("[" + pkg + "] willShowLynxBanner (banner ad)", () -> hookLynxBanner(bridge, classLoader));
+                safeHook("[" + pkg + "] canThisPositionShow (ad slot)", () -> hookAdPosition(bridge, classLoader));
+                safeHook("[" + pkg + "] social stats forge", () -> hookSocialStats(bridge, classLoader));
+                safeHook("[" + pkg + "] name forge", () -> hookUserNameAvatar(bridge, classLoader));
+                safeHook("[" + pkg + "] recommend users clear", () -> hookRecommendUsers(bridge, classLoader));
+            }
+        } else {
+            // ???? only: name forge
+            if (dexKit != null) {
+                final DexKitBridge bridge = dexKit;
+                safeHook("[" + pkg + "] name forge (\u8c03\u6559\u53f8)", () -> hookUserNameAvatar(bridge, classLoader));
+            }
         }
-        log(Log.INFO, TAG, "FanQieHook install finished");
+        log(Log.INFO, TAG, "[" + pkg + "] install finished (fullSet=" + fullSet + ")");
+        HookStatusReporter.reportTargetHooked(pkg);
+        HookStatusFiles.markTargetHooked(pkg);
     }
 
-    // ============================ Hook ② —— 解锁会员（核心）============================
+    /**
+     * Write an activation flag the module app can read. Triggered from
+     * {@link #onPackageReady(XposedModuleInterface.PackageReadyParam)} so the
+     * timestamp reflects the most recent framework load.
+     *
+     * <p>We can't use {@code Context.getExternalFilesDir()} from the hook process
+     * (no Context) so we hardcode the well-known per-app external dir
+     * {@code /sdcard/Android/data/<module-pkg>/files/}. No runtime permission
+     * needed (API 24+). Falls back silently if the directory is not writable
+     * (some ROMs block even the per-app dir on early boot).
+     */
+    private void writeActivationFlag(String pkg, boolean fullSet) {
+        // NOTE: We run inside the *target* process (e.g. com.dragon.read),
+        // not the module app. Any file we write lives in the target app's
+        // UID, so the module app cannot read it across the UID boundary on
+        // modern Android. This method is intentionally a logcat-only
+        // diagnostic ? the timestamp is the source of truth for verifying
+        // activation externally (see HookApp / MainActivity fallback).
+        log(Log.INFO, TAG,
+                "ACTIVATION pkg=" + pkg
+                + " fullSet=" + fullSet
+                + " ts=" + System.currentTimeMillis()
+                + " framework=" + getFrameworkName()
+                + " v" + getFrameworkVersion());
+    }
+
+    // ============================ Hook ? ? Unlock VIP (core) ============================
 
     /**
-     * 对 {@code com.dragon.read.user.model.VipInfoModel} 的全部构造函数挂 hook：篡改构造参数。
-     * 忠于报告 g5.f()：固定 expireTime/leftTime = 113143670061、isVip="1"，再把所有 boolean
-     * 参数置 true、所有 int 参数置 1000000。
+     * Hook all constructors of {@code com.dragon.read.user.model.VipInfoModel}: rewrite
+     * constructor args so expireTime/leftTime ? 5355 years, isVip="1", all booleans=true,
+     * all ints=1000000.
      */
     private void hookVipModel(ClassLoader classLoader) throws Throwable {
         Class<?> vipInfoModelClass = Class.forName(
@@ -119,13 +175,11 @@ public class HookInit extends XposedModule {
                     .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                     .intercept(chain -> {
                         Object[] args = chain.getArgs().toArray();
-                        // 仅当至少有 3 个参数时按位置改写（报告的前三个参数语义）。
                         if (args.length >= 3) {
                             args[0] = FAKE_EXPIRE_SEC; // expireTime
                             args[1] = "1";             // isVip
                             args[2] = FAKE_EXPIRE_SEC; // leftTime
                         }
-                        // 按类型批量改写：所有 boolean→true，所有 int→1000000（额度/次数类配额拉满）。
                         for (int i = 0; i < args.length && i < paramTypes.length; i++) {
                             Class<?> t = paramTypes[i];
                             if (t == boolean.class) {
@@ -141,7 +195,69 @@ public class HookInit extends XposedModule {
         log(Log.INFO, TAG, "VipInfoModel hooks installed");
     }
 
-    // ============================ Hook ① —— 关闭 Lynx 横幅广告 ============================
+    // ============================ Hook ? ? Forge name only =============================
+
+    /**
+     * Two mount points combined (avatar removed per user request):
+     * <ol>
+     *   <li>Method referencing "doSyncInitUserInfo:%s" ? set userName (avatar not touched)</li>
+     *   <li>Classes holding a field of type com.dragon.read.rpc.model.CommentUserStrInfo
+     *       ? set userName (avatar not touched)</li>
+     * </ol>
+     */
+    private void hookUserNameAvatar(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
+        // (1) User info sync method
+        Method syncMethod = findFirstMethodByUsingString(bridge, classLoader, "doSyncInitUserInfo:%s");
+        if (syncMethod != null) {
+            hookName(syncMethod, "userName");
+            log(Log.INFO, TAG, "doSyncInitUserInfo name forge installed");
+        } else {
+            log(Log.WARN, TAG, "doSyncInitUserInfo method not found");
+        }
+
+        // (2) Classes holding a CommentUserStrInfo field ? DexKit field-type matcher.
+        try {
+            Class<?> commentInfoClass = Class.forName(
+                    "com.dragon.read.rpc.model.CommentUserStrInfo", false, classLoader);
+            for (Class<?> holder : findClassesWithFieldType(bridge, commentInfoClass, classLoader)) {
+                for (Method m : holder.getDeclaredMethods()) {
+                    if (Modifier.isAbstract(m.getModifiers())) {
+                        continue;
+                    }
+                    Class<?>[] ptypes = m.getParameterTypes();
+                    for (Class<?> pt : ptypes) {
+                        if (pt == holder) {
+                            hookName(m, "userName");
+                            break;
+                        }
+                    }
+                }
+            }
+            log(Log.INFO, TAG, "CommentUserStrInfo name forge installed");
+        } catch (Throwable t) {
+            log(Log.WARN, TAG, "CommentUserStrInfo hook skipped: " + t.getMessage());
+        }
+    }
+
+    private void hookName(Method method, String nameField) {
+        hook(method)
+                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                .intercept(chain -> {
+                    Object[] args = chain.getArgs().toArray();
+                    for (Object arg : args) {
+                        if (arg == null) {
+                            continue;
+                        }
+                        try {
+                            setField(arg, nameField, FAKE_USER_NAME);
+                        } catch (ReflectiveOperationException ignored) {
+                        }
+                    }
+                    return chain.proceed(args);
+                });
+    }
+
+    // ============================ Hook ? ? close Lynx banner ad (fanqie only) ============================
 
     private void hookLynxBanner(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
         Method method = findFirstNonAbstractMethodByName(bridge, classLoader, "willShowLynxBanner");
@@ -151,20 +267,12 @@ public class HookInit extends XposedModule {
         }
         hook(method)
                 .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
-                .intercept(chain -> Boolean.FALSE); // 永不展示 Lynx 横幅广告
+                .intercept(chain -> Boolean.FALSE); // never show Lynx banner
         log(Log.INFO, TAG, "willShowLynxBanner -> false installed");
     }
 
-    // ============================ Hook ③ —— 屏蔽个人页推广广告位 ============================
+    // ============================ Hook ? ? shield user-page promo ad slot (fanqie only) ============================
 
-    /**
-     * 对 {@code canThisPositionShow} 挂 after 回调（v4.1.6 {@code C1078.mo656} step3：
-     * {@code C0827(10)}→m2225 命名匹配 → {@code m3233}(after-hook) + {@code C0826(5)=m2202}）：
-     * 当 {@code args[0]=="PromotionFromUserPage" && args[1]==true} 时，把返回对象的
-     * {@code leftTime} 拉满、{@code extraInfo} 指向一个新建的
-     * {@code com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo}（其 {@code leftTime} 同样拉满）、
-     * {@code text} 清空，等效屏蔽该页面推广广告。详见 {@link #patchPromotionResult}。
-     */
     private void hookAdPosition(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
         Method method = findFirstNonAbstractMethodByName(bridge, classLoader, "canThisPositionShow");
         if (method == null) {
@@ -175,7 +283,6 @@ public class HookInit extends XposedModule {
                 .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                 .intercept(chain -> {
                     Object result = chain.proceed();
-                    // canThisPositionShow(pageName, show, ...)：命中个人页推广位时处理其返回对象。
                     if (matchesPromotionPage(chain.getArgs())) {
                         patchPromotionResult(result, classLoader);
                     }
@@ -185,7 +292,7 @@ public class HookInit extends XposedModule {
     }
 
     private static boolean matchesPromotionPage(java.util.List<Object> args) {
-        // args[0]=pageName, args[1]=是否展示（报告：pageName=="PromotionFromUserPage" && args[1]==true）。
+        // args[0]=pageName, args[1]=shouldShow. Match: pageName=="PromotionFromUserPage" && args[1]==true.
         if (args.isEmpty() || !"PromotionFromUserPage".equals(args.get(0))) {
             return false;
         }
@@ -197,27 +304,17 @@ public class HookInit extends XposedModule {
             return;
         }
         try {
-            // 忠于 v4.1.6 C0068.m711（由 C0826.m2202 在命中 PromotionFromUserPage 时触发）：
-            //   1) 新建一个 com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo（无参构造），
-            //      把它的 leftTime 字段拉满；
-            //   2) 把返回对象的 extraInfo 指向这个新对象（v4.1.6 的标记位）、leftTime 拉满、text 清空。
-            // 原实现误把 extraInfo 指向 result 自身（自引用），既非 v4.1.6 行为也无标记语义，故修正。
             Object extraInfo = newExtraInfo(classLoader);
             if (extraInfo != null) {
-                setField(extraInfo, "leftTime", FAKE_EXPIRE_MS / 1000L); // VipPromotionStrategyExtraInfo.leftTime
-                setField(result, "extraInfo", extraInfo);                // 标记位（指向新建的 ExtraInfo）
+                setField(extraInfo, "leftTime", FAKE_EXPIRE_MS / 1000L);
+                setField(result, "extraInfo", extraInfo);
             }
-            setField(result, "leftTime", FAKE_EXPIRE_MS / 1000L); // 剩余时间拉满
-            setField(result, "text", "");                         // 广告文案清空
+            setField(result, "leftTime", FAKE_EXPIRE_MS / 1000L);
+            setField(result, "text", "");
         } catch (ReflectiveOperationException ignored) {
         }
     }
 
-    /**
-     * 反射新建一个 {@code com.dragon.read.rpc.model.VipPromotionStrategyExtraInfo}（无参构造）。
-     * 与 v4.1.6 {@code C0826.m2202} 里 {@code AbstractC1392.m3216(Class.forName(name), new Object[0], ...)}
-     * 等价：用目标进程 ClassLoader 加载该类、走无参构造、返回实例。类不存在时返回 null（降级为不写 extraInfo）。
-     */
     private static Object newExtraInfo(ClassLoader classLoader) {
         try {
             Class<?> clazz = Class.forName(
@@ -228,7 +325,7 @@ public class HookInit extends XposedModule {
         }
     }
 
-    // ============================ Hook ④ —— 伪造关注/粉丝/获赞 ============================
+    // ============================ Hook ? ? forge social stats (fanqie only) ============================
 
     private void hookSocialStats(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
         Method method = findFirstMethodByUsingString(bridge, classLoader,
@@ -240,7 +337,6 @@ public class HookInit extends XposedModule {
         hook(method)
                 .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
                 .intercept(chain -> {
-                    // before：参数对象（args[0]）上的社交计数字段改成炫耀值。
                     Object[] args = chain.getArgs().toArray();
                     if (args.length > 0 && args[0] != null) {
                         try {
@@ -255,74 +351,10 @@ public class HookInit extends XposedModule {
         log(Log.INFO, TAG, "social stats forge installed");
     }
 
-    // ============================ Hook ⑤ —— 伪造昵称/头像 =============================
-
-    /**
-     * 两条挂载点合并：
-     * <ol>
-     *   <li>引用 "doSyncInitUserInfo:%s" 的方法 → 改 userName/avatarUrl</li>
-     *   <li>含字段 com.dragon.read.rpc.model.CommentUserStrInfo 的类上的方法 → 改 userName/userAvatar</li>
-     * </ol>
-     * 对每个命中方法挂 before 回调，把参数对象里的昵称/头像字段替换为占位值。
-     */
-    private void hookUserNameAvatar(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
-        // (1) 用户信息同步方法
-        Method syncMethod = findFirstMethodByUsingString(bridge, classLoader, "doSyncInitUserInfo:%s");
-        if (syncMethod != null) {
-            hookNameAvatar(syncMethod, "userName", "avatarUrl");
-            log(Log.INFO, TAG, "doSyncInitUserInfo name/avatar forge installed");
-        } else {
-            log(Log.WARN, TAG, "doSyncInitUserInfo method not found");
-        }
-
-        // (2) 含 CommentUserStrInfo 字段的类上的方法（DexKit 按字段所属类匹配）
-        try {
-            Class<?> commentInfoClass = Class.forName(
-                    "com.dragon.read.rpc.model.CommentUserStrInfo", false, classLoader);
-            for (Class<?> holder : findClassesWithFieldType(bridge, commentInfoClass, classLoader)) {
-                for (Method m : holder.getDeclaredMethods()) {
-                    // 仅 hook 取该对象为参数的方法（避免无差别 hook 静态初始化等）。
-                    if (Modifier.isAbstract(m.getModifiers())) {
-                        continue;
-                    }
-                    Class<?>[] ptypes = m.getParameterTypes();
-                    for (Class<?> pt : ptypes) {
-                        if (pt == holder) {
-                            hookNameAvatar(m, "userName", "userAvatar");
-                            break;
-                        }
-                    }
-                }
-            }
-            log(Log.INFO, TAG, "CommentUserStrInfo name/avatar forge installed");
-        } catch (Throwable t) {
-            log(Log.WARN, TAG, "CommentUserStrInfo hook skipped: " + t.getMessage());
-        }
-    }
-
-    private void hookNameAvatar(Method method, String nameField, String avatarField) {
-        hook(method)
-                .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
-                .intercept(chain -> {
-                    Object[] args = chain.getArgs().toArray();
-                    for (Object arg : args) {
-                        if (arg == null) {
-                            continue;
-                        }
-                        try {
-                            setField(arg, nameField, FAKE_USER_NAME);
-                            setField(arg, avatarField, FAKE_AVATAR_URL);
-                        } catch (ReflectiveOperationException ignored) {
-                        }
-                    }
-                    return chain.proceed(args);
-                });
-    }
-
-    // ============================ Hook ⑥ —— 清空推荐用户 =============================
+    // ============================ Hook ? ? clear recommend users (fanqie only) ============================
 
     private void hookRecommendUsers(DexKitBridge bridge, ClassLoader classLoader) throws Throwable {
-        Method method = findFirstMethodByUsingString(bridge, classLoader, "获取推荐用户数据成功");
+        Method method = findFirstMethodByUsingString(bridge, classLoader, "\u83b7\u53d6\u63a8\u8350\u7528\u6237\u6570\u636e\u6210\u529f");
         if (method == null) {
             log(Log.WARN, TAG, "recommend users method not found");
             return;
@@ -332,23 +364,25 @@ public class HookInit extends XposedModule {
                 .intercept(chain -> {
                     Object[] args = chain.getArgs().toArray();
                     if (args.length > 0) {
-                        args[0] = null; // 清空推荐用户列表数据 → 推荐流不展示
+                        args[0] = null;
                     }
                     return chain.proceed(args);
                 });
         log(Log.INFO, TAG, "recommend users clear installed");
     }
 
-    // ============================ DexKit 辅助 =============================
+    // ============================ DexKit helpers =============================
 
     private DexKitBridge createDexKitBridge(ClassLoader classLoader) {
-        // DexKit 2.x 不会自动加载 libdexkit.so —— 必须由调用方先 System.loadLibrary("dexkit")。
-        // 否则 nativeInitDexKitByClassLoader 抛 UnsatisfiedLinkError（"is the library loaded?"）。
-        // 在 Xposed 目标进程里加载模块自带的 native lib 有两条路径：
-        //   1) System.loadLibrary("dexkit")：多数框架（LSPosed）会把模块 APK 的 lib 加入目标进程库搜索路径；
-        //   2) 失败回退：从模块 APK 的 nativeLibraryDir 用绝对路径 System.load。
+        // DexKit 2.x does not auto-load libdexkit.so ? must call System.loadLibrary("dexkit")
+        // first, otherwise nativeInitDexKitByClassLoader throws UnsatisfiedLinkError.
+        // Two paths to load the native lib in the Xposed target process:
+        //   1) System.loadLibrary("dexkit") ? most frameworks (LSPosed) add the module
+        //      APK's lib/ to the target process's library search path.
+        //   2) Fallback: System.load with absolute path from the module APK's nativeLibraryDir.
         ensureDexKitNativeLoaded();
-        // create(ClassLoader, boolean)：直接用目标进程 ClassLoader 解析 dex，无需 APK 路径。
+        // create(ClassLoader, boolean) uses the target process ClassLoader to resolve dex
+        // directly ? no APK path needed.
         return DexKitBridge.create(classLoader, true);
     }
 
@@ -368,7 +402,6 @@ public class HookInit extends XposedModule {
                 log(Log.INFO, TAG, "libdexkit.so loaded via loadLibrary");
                 return;
             } catch (UnsatisfiedLinkError primary) {
-                // 回退：取模块 APK 的 nativeLibraryDir，按绝对路径加载本机库。
                 try {
                     String dir = getModuleApplicationInfo().nativeLibraryDir;
                     System.load(dir + "/libdexkit.so");
@@ -383,7 +416,7 @@ public class HookInit extends XposedModule {
         }
     }
 
-    /** 按方法名定位，返回首个非抽象实现（报告 v10.u() 的 firstNonAbstractMethod 语义）。 */
+    /** Locate by method name; return the first non-abstract implementation. */
     private Method findFirstNonAbstractMethodByName(DexKitBridge bridge, ClassLoader cl, String name)
             throws Throwable {
         FindMethod query = new FindMethod().matcher(new MethodMatcher().name(name));
@@ -397,7 +430,7 @@ public class HookInit extends XposedModule {
         return null;
     }
 
-    /** 按方法体内引用的字符串定位，返回首个匹配。 */
+    /** Locate by string referenced in method body; return first match. */
     private Method findFirstMethodByUsingString(DexKitBridge bridge, ClassLoader cl, String usingString)
             throws Throwable {
         FindMethod query = new FindMethod().matcher(
@@ -412,7 +445,7 @@ public class HookInit extends XposedModule {
         return null;
     }
 
-    /** 找出"含指定类型字段"的全部类（用于 hook ⑤′ 的 CommentUserStrInfo 持有类）。 */
+    /** Find all classes that hold a field of the given type. */
     private java.util.List<Class<?>> findClassesWithFieldType(DexKitBridge bridge, Class<?> fieldType,
                                                               ClassLoader classLoader) {
         java.util.List<Class<?>> out = new java.util.ArrayList<>();
@@ -441,7 +474,7 @@ public class HookInit extends XposedModule {
         return data.getMethodInstance(classLoader);
     }
 
-    // ============================ 反射 / UI 辅助 =============================
+    // ============================ Reflection / UI helpers =============================
 
     private interface ThrowingRunnable {
         void run() throws Throwable;
@@ -464,7 +497,7 @@ public class HookInit extends XposedModule {
             return;
         }
         new Handler(Looper.getMainLooper()).post(() ->
-                Toast.makeText(application, "番茄小说 VIP Hook 成功", Toast.LENGTH_SHORT).show());
+                Toast.makeText(application, "\u756a\u8304\u7ea2\u679c VIP Hook \u6210\u529f", Toast.LENGTH_SHORT).show());
     }
 
     private static Application getCurrentApplication() {
