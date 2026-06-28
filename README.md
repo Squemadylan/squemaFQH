@@ -2,20 +2,28 @@
 
 > 基于 [Modern libxposed API 102](https://github.com/libxposed/api) 的 Xposed 模块，同时解锁番茄小说（`com.dragon.read`）与红果短剧（`com.phoenix.read`）的 VIP 状态。
 
-项目名取自 **番茄 + 红果** 的拼音首字母（Squema = 两个拼音的合写）。
+**仓库**：[github.com/Squemadylan/squemaFQH](https://github.com/Squemadylan/squemaFQH) · **作者**：Squema（英文名） · **当前版本**：1.6.3
+
+## 项目命名
+
+| 部分 | 含义 |
+| --- | --- |
+| **Squema** | 作者英文名，不是中文拼音缩写 |
+| **FQ** | **F**an**Q**ie（番茄）的缩写；模块同时 Hook 番茄小说与红果短剧 |
+| **Hook** | Xposed 模块 |
 
 ## 项目概述
 
 **SquemaFQHook** 是一个纯 Java 的单模块 Android Xposed 模块，在目标进程内通过反射 + DexKit 特征签名定位混淆方法并挂钩，实现：
 
-- **番茄小说**（`com.dragon.read`）：VIP 解锁、关 Lynx 横幅广告、屏蔽个人页推广广告位、伪造关注/粉丝/获赞、伪造昵称、伪造头像、清空推荐用户
+- **番茄小说**（`com.dragon.read`）：VIP 解锁、关 Lynx 横幅广告、屏蔽个人页推广广告位、伪造关注/粉丝/获赞、伪造昵称、清空推荐用户
 - **红果短剧**（`com.phoenix.read`）：VIP 解锁、伪造昵称（红果内部复用 `com.dragon.read` 的 `VipInfoModel` 类，仅需这两条 hook）
 
 ### 几个有趣的发现
 
 1. **红果短剧内部直接复用 `com.dragon.read` 的核心 VIP 模型** —— 通过 `dexdump classes13.dex` 验证：`com.dragon.read.user.model.VipInfoModel` 构造函数签名完全一致 `(String,String,String,boolean,boolean,int,boolean,VipCommonSubType)`。所以同一段 hook 代码可以同时作用于两个 app。
 2. **本项目从 `ByteRax/FanQieHook` fork 而来**，核心 hook 逻辑与 `HookVip v4.1.6` 中 `C1078.mo656()` 的注册流程一一对应，通过解密 AES-CBC+XOR 字符串常量逐条核对签名，实现"全版本通杀"。
-3. **昵称定制为 `调教司`**（按用户要求），未挂钩头像。
+3. **昵称定制为 `云朵`**，未挂钩头像。
 
 ## 运行环境
 
@@ -88,10 +96,12 @@ adb install -r -t app/build/outputs/apk/debug/app-debug.apk
 ## 使用
 
 1. 在 LSPosed（或兼容框架）中启用本模块
-2. 作用域勾选：**番茄小说** `com.dragon.read`、**红果短剧** `com.phoenix.read`
+2. 作用域勾选：**番茄小说** `com.dragon.read`、**红果短剧** `com.phoenix.read`（`android` 在 `scope.list` 中用于 system 通道，一般无需手动勾选）
 3. 重启手机生效
 4. 首次打开番茄小说或红果短剧，应弹出 Toast `番茄红果 VIP Hook 成功`
-5. 会员图标、到期时间、昵称（番茄）、关注/粉丝/获赞等已替换
+5. 会员图标、到期时间、昵称（显示为「云朵」）、关注/粉丝/获赞等已替换
+
+> **注意**：`adb install -r` 覆盖安装后，LSPosed 有时会把模块标记为 `enabled=0`，需在框架里重新启用模块并勾选作用域。
 
 ## 项目结构
 
@@ -138,8 +148,8 @@ app/src/main/
 | ② | 解锁会员 | `VipInfoModel` 全部构造函数 | 篡改 `expireTime/isVip/leftTime` |
 | ③ | 屏蔽个人页推广广告位 | 方法名 `canThisPositionShow` | 拉满 `leftTime`，清空 `text` |
 | ④ | 伪造关注/粉丝/获赞 | 引用 `"followUserNum = %d, fansNum = %d, ..."` | 改 `followUserNum=5200000` 等 |
-| ⑤a | 伪造昵称（同步入口） | 引用 `"doSyncInitUserInfo:%s"` | 改 `userName="调教司"` |
-| ⑤b | 伪造昵称（评论用户） | 持有 `CommentUserStrInfo` 字段的类 | 改 `userName="调教司"` |
+| ⑤a | 伪造昵称（同步入口） | 引用 `"doSyncInitUserInfo:%s"` | 改 `userName="云朵"` |
+| ⑤b | 伪造昵称（评论用户） | 持有 `CommentUserStrInfo` 字段的类 | 改 `userName="云朵"` |
 | ⑥ | 清空推荐用户 | 引用 `"获取推荐用户数据成功"` | `args[0] = null` |
 
 每条 hook 都用独立的 `safeHook(...)` 包裹，一条失败不影响其余。所有 hook 使用 `PROTECTIVE` 异常模式。
@@ -147,14 +157,14 @@ app/src/main/
 ## Hook 列表（红果短剧）
 
 - ② 解锁会员（与番茄同源）
-- ⑤ 伪造昵称为 `调教司`
+- ⑤ 伪造昵称为 `云朵`
 
 ## Xposed 模块约定
 
 | 元数据 | 位置 |
 | --- | --- |
 | **入口类** | `com.byterax.phoenix.read.HookInit`（`io.github.libxposed.api.XposedModule`）+ `com.byterax.phoenix.read.xposed.SystemHookEntry`（classic `IXposedHookLoadPackage`），在 `app/src/main/resources/META-INF/xposed/java_init.list` 注册 |
-| **目标作用域** | `app/src/main/resources/META-INF/xposed/scope.list`（`com.dragon.read`、`com.phoenix.read`） |
+| **目标作用域** | `app/src/main/resources/META-INF/xposed/scope.list`（`android`、`com.dragon.read`、`com.phoenix.read`） |
 | **模块声明** | `app/src/main/resources/META-INF/xposed/module.prop`（`minApiVersion=102`、`targetApiVersion=102`、`staticScope=true`） |
 
 新增 hook 时，在 `HookInit.onPackageReady` 里按 `param.getPackageName()` 分发到对应包即可。

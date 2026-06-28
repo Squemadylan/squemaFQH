@@ -56,8 +56,8 @@ public class HookInit extends XposedModule {
     private static final long FAKE_EXPIRE_MS = 113143670061000L;
     private static final String FAKE_EXPIRE_SEC = String.valueOf(FAKE_EXPIRE_MS / 1000L);
 
-    // ??? (per user request). Avatar not hooked.
-    private static final String FAKE_USER_NAME = "\u8c03\u6559\u53f8";
+    // 云朵 (per user request). Avatar not hooked.
+    private static final String FAKE_USER_NAME = "\u4e91\u6735";
     private static final String FAKE_AVATAR_URL = "";
 
     // Social stats (used by ?? only ? ?? doesn't expose these methods/strings).
@@ -123,7 +123,7 @@ public class HookInit extends XposedModule {
             // ???? only: name forge
             if (dexKit != null) {
                 final DexKitBridge bridge = dexKit;
-                safeHook("[" + pkg + "] name forge (\u8c03\u6559\u53f8)", () -> hookUserNameAvatar(bridge, classLoader));
+                safeHook("[" + pkg + "] name forge (\u4e91\u6735)", () -> hookUserNameAvatar(bridge, classLoader));
             }
         }
         log(Log.INFO, TAG, "[" + pkg + "] install finished (fullSet=" + fullSet + ")");
