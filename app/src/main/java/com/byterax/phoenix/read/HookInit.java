@@ -21,8 +21,11 @@ import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.byterax.phoenix.read.cherrygram.CherryGramVipHook;
+import com.byterax.phoenix.read.quark.QuarkHookMain;
+import com.byterax.phoenix.read.xiaox.XiaoXVipHook;
 import com.byterax.phoenix.read.xposed.SystemBootstrap;
 import com.byterax.phoenix.read.HookStatusFiles;
+import com.byterax.phoenix.read.HookStatusReporter;
 
 import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
@@ -70,6 +73,8 @@ public class HookInit extends XposedModule {
     //  = (expireTime,isVip,leftTime,isAutoCharge,isUnionVip,unionSource,isAdVip,subType)
     private static final String PKG_FANQIE = Constants.PKG_FANQIE;
     private static final String PKG_HONGGUO = Constants.PKG_HONGGUO;
+    private static final String PKG_QUARK = Constants.PKG_QUARK;
+    private static final String PKG_XIAOX = Constants.PKG_XIAOX;
     private static final String PKG_CHERRYGRAM = Constants.PKG_CHERRYGRAM;
 
     private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
@@ -93,15 +98,46 @@ public class HookInit extends XposedModule {
         HookStatusFiles.markSystemReady();
     }
 
+    /**
+     * Same moment as classic {@code handleLoadPackage}: ClassLoader exists,
+     * {@code Application.attach} has not run. Original QuarkHook installs here.
+     */
+    @Override
+    public void onPackageLoaded(XposedModuleInterface.PackageLoadedParam param) {
+        if (!PKG_QUARK.equals(param.getPackageName()) || !param.isFirstPackage()) {
+            return;
+        }
+        ClassLoader loader = param.getDefaultClassLoader();
+        Log.i(TAG, "onPackageLoaded quark firstPackage loader="
+                + (loader == null ? "null" : loader.getClass().getName()));
+        QuarkHookMain.installFromModern(this, loader, "loaded");
+    }
+
     @Override
     public void onPackageReady(XposedModuleInterface.PackageReadyParam param) {
         String pkg = param.getPackageName();
         if (PKG_FANQIE.equals(pkg)) {
-            HookStatusFiles.markTargetHooked(pkg);
+            HookStatusReporter.reportTargetHooked(pkg);
             installHooks(PKG_FANQIE, param.getClassLoader(), /*fullSet=*/ true);
         } else if (PKG_HONGGUO.equals(pkg)) {
-            HookStatusFiles.markTargetHooked(pkg);
+            HookStatusReporter.reportTargetHooked(pkg);
             installHooks(PKG_HONGGUO, param.getClassLoader(), /*fullSet=*/ false);
+        } else if (PKG_QUARK.equals(pkg)) {
+            ClassLoader loader = param.getClassLoader();
+            if (loader == null) {
+                loader = param.getDefaultClassLoader();
+            }
+            Log.i(TAG, "onPackageReady quark loader="
+                    + (loader == null ? "null" : loader.getClass().getName()));
+            QuarkHookMain.installFromModern(this, loader, "ready");
+        } else if (PKG_XIAOX.equals(pkg)) {
+            ClassLoader loader = param.getClassLoader();
+            if (loader == null) {
+                loader = param.getDefaultClassLoader();
+            }
+            Log.i(TAG, "onPackageReady xiaox loader="
+                    + (loader == null ? "null" : loader.getClass().getName()));
+            XiaoXVipHook.installFromModern(this, loader);
         } else if (PKG_CHERRYGRAM.equals(pkg)) {
             ClassLoader loader = param.getClassLoader();
             if (loader == null) {

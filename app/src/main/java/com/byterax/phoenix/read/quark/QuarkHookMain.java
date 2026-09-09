@@ -26,7 +26,7 @@ public class QuarkHookMain {
             return Boolean.FALSE;
         }
     };
-    private static final String[] LOCKED_KEYWORDS = {"guide", "home_navigation", "navigation_setting", "navi_more", "more_navigation", "navigation_switch", "bottom_msg", "notification", "msg_setting", "ai_task", "screenshot", "push", "ad_reco", "content_reco", "reco_switch", "novel_mode", "comics_mode", "netdisk", "pan_entry", "integrate", "home_toolbar", "recent_navi", "ai_navi", "auto_wake", "smart_protect", "toolbar_menu_style"};
+    private static final String[] LOCKED_KEYWORDS = {"guide", "home_navigation", "navigation_setting", "navi_more", "more_navigation", "navigation_switch", "bottom_msg", "notification", "msg_setting", "ai_task", "screenshot", "push", "novel_mode", "comics_mode", "netdisk", "pan_entry", "integrate", "home_toolbar", "recent_navi", "ai_navi", "auto_wake", "smart_protect", "toolbar_menu_style"};
     private static final String[] NAVI_BLOCK_TITLES = {"书城", "小说", "书旗", "阅读", "生成创作", "高效办公", "学习教育", "个性解读", "边界生活", "AI写作", "Ai写作", "ai写作", "扫描王", "夸克PPT", "夸克文档", "学习", "夸克高考", "夸克学习", "夸克日报", "日报"};
     private static final String[] NAVI_BLOCK_BIZ = {"novel", "bookstore", "shuqi", "book", "ai_tool", "office", "study", "learn", "xuexi", "saomiao", "aippt", "ppt", "gaokao", "wps", "excel", "word", "wangpan"};
 
