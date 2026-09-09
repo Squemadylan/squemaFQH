@@ -5,8 +5,18 @@ import android.os.Process;
 import java.io.File;
 
 /**
- * Trivial aliveness checks. If the libxposed / Zygisk runtime is loaded in the current
- * process, or if we have root, the channel is considered alive and every target is ✓.
+ * Runtime aliveness checks for the module app's status UI.
+ *
+ * <p>The channel is considered alive if <b>any</b> of these hold:
+ * <ul>
+ *   <li>libxposed / Zygisk native markers present on the system</li>
+ *   <li>a libxposed / classic Xposed runtime class is loaded in the current process</li>
+ *   <li>the process runs as root (uid 0) or {@code su} binary is present</li>
+ * </ul>
+ *
+ * <p>None of these checks are authoritative — they only drive the UI hint; the
+ * actual hook activation is proven by {@link HookStatusFiles} markers on disk
+ * plus the {@code XposedService} round-trip (see {@code HookApp}).
  */
 public final class RuntimeDetector {
 
@@ -16,58 +26,52 @@ public final class RuntimeDetector {
             "/vendor/lib64/liblspd.so",
             "/system/lib64/libzygisk.so",
             "/system/lib/libzygisk.so",
-            "/vendor/lib64/libzygisk.so"
+            "/vendor/lib64/libzygisk.so",
+    };
+
+    private static final String[] SU_BINARIES = {
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/vendor/bin/su",
+            "/sbin/su",
+    };
+
+    /** Sentinel class names whose presence in the class loader proves a runtime is
+     *  loaded. {@code Class.forName} triggers the loader without forcing init. */
+    private static final String[] RUNTIME_CLASS_PROBES = {
+            "io.github.libxposed.api.XposedInterface",
+            "de.robv.android.xposed.XposedBridge",
+            "de.robv.android.xposed.XposedHelpers",
     };
 
     private RuntimeDetector() {}
 
-    /** Any libxposed / Zygisk marker present on the system. */
     public static boolean isFrameworkInstalled() {
         for (String path : FRAMEWORK_MARKERS) {
-            if (new File(path).exists()) {
-                return true;
-            }
+            if (new File(path).exists()) return true;
         }
         return false;
     }
 
-    /** Detect a loaded libxposed runtime inside the current process. */
     public static boolean isLibxposedLoaded() {
-        try {
-            Class.forName("io.github.libxposed.api.XposedInterface");
-            return true;
-        } catch (Throwable ignored) {
-        }
-        try {
-            Class.forName("de.robv.android.xposed.XposedBridge");
-            return true;
-        } catch (Throwable ignored) {
-        }
-        try {
-            Class.forName("de.robv.android.xposed.XposedHelpers");
-            return true;
-        } catch (Throwable ignored) {
-        }
-        return false;
-    }
-
-    /** The process uid is 0, or we can run commands as root. */
-    public static boolean hasRoot() {
-        if (Process.myUid() == 0) {
-            return true;
-        }
-        String[] commands = {
-                "/system/bin/su", "/system/xbin/su", "/vendor/bin/su", "/sbin/su"
-        };
-        for (String cmd : commands) {
-            if (new File(cmd).exists()) {
+        for (String className : RUNTIME_CLASS_PROBES) {
+            try {
+                Class.forName(className);
                 return true;
+            } catch (Throwable ignored) {
             }
         }
         return false;
     }
 
-    /** True if the framework is installed and the app can speak libxposed. */
+    public static boolean hasRoot() {
+        if (Process.myUid() == 0) return true;
+        for (String cmd : SU_BINARIES) {
+            if (new File(cmd).exists()) return true;
+        }
+        return false;
+    }
+
     public static boolean isModuleRuntime() {
         return isFrameworkInstalled() || isLibxposedLoaded() || hasRoot();
     }

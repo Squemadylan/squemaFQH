@@ -20,15 +20,22 @@ import io.github.libxposed.service.XposedServiceHelper;
  * When bound, the module app can read {@link XposedService#getScope()} and
  * (API 102+) {@code getRunningTargets()} — the same channel other modern
  * modules use to light their status UI.
+ *
+ * <p>Threading: {@link #getXposedService()} is safe to call from any thread;
+ * {@link #addStatusListener}/{@link #removeStatusListener} are intended for
+ * the main thread; the underlying {@link CopyOnWriteArrayList} is also thread-safe.
  */
 public class HookApp extends Application {
+
     private static final String TAG = "SquemaFQHook";
 
+    /** Sink for UI fragments that should refresh when the LSPosed service comes/goes. */
     public interface StatusListener {
         void onXposedStatusChanged();
     }
 
     private static volatile HookApp instance;
+
     private final CopyOnWriteArrayList<StatusListener> listeners = new CopyOnWriteArrayList<>();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -64,18 +71,27 @@ public class HookApp extends Application {
 
     public static void addStatusListener(StatusListener listener) {
         HookApp app = instance;
-        if (app == null || listener == null) {
-            return;
-        }
-        app.listeners.addIfAbsent(listener);
+        if (app != null && listener != null) app.listeners.addIfAbsent(listener);
     }
 
     public static void removeStatusListener(StatusListener listener) {
         HookApp app = instance;
-        if (app == null || listener == null) {
-            return;
+        if (app != null && listener != null) app.listeners.remove(listener);
+    }
+
+    @Nullable
+    public static XposedService getXposedService() {
+        HookApp app = instance;
+        if (app != null) return app.xposedService;
+        // Fallback: another process's app singleton; only useful in non-main-thread calls.
+        try {
+            Application current = (Application) Class.forName("android.app.ActivityThread")
+                    .getDeclaredMethod("currentApplication")
+                    .invoke(null);
+            return (current instanceof HookApp) ? ((HookApp) current).xposedService : null;
+        } catch (Throwable ignored) {
+            return null;
         }
-        app.listeners.remove(listener);
     }
 
     private void notifyStatusChanged() {
@@ -95,23 +111,5 @@ public class HookApp extends Application {
         } catch (Throwable t) {
             return "<error>";
         }
-    }
-
-    @Nullable
-    public static XposedService getXposedService() {
-        HookApp app = instance;
-        if (app != null) {
-            return app.xposedService;
-        }
-        try {
-            Application current = (Application) Class.forName("android.app.ActivityThread")
-                    .getDeclaredMethod("currentApplication")
-                    .invoke(null);
-            if (current instanceof HookApp) {
-                return ((HookApp) current).xposedService;
-            }
-        } catch (Throwable ignored) {
-        }
-        return null;
     }
 }
