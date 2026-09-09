@@ -41,13 +41,32 @@ captures/
 *.jks
 *.keystore
 
+# Backup / scratch files (never commit these)
+*.bak
+*.orig
+*.rej
+*~
+.gradle-daemon-jvm.properties.bak
+build/
+.gradle/
+
 # Log / OS files
 *.log
 .DS_Store
 ._*
 
-# Upstream reference materials (not part of this module)
+# Decompressed / scratch APK dirs (apktool/jadx/dumpsys output)
+*.unpacked/
+apk_check/
+apk_out/
+jadx_out/
+device_cherrygram.apk
+device_cherry.apk
 cherrygram_vip_hook/
-1/squemaFQH/
+
+# Upstream reference materials (not part of this module)
+1/
 squemaFQH.zip
 base.apk
+clawgramSource/
+

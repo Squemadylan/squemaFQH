@@ -14,8 +14,8 @@ android {
         applicationId "com.byterax.phoenix.read"
         minSdkVersion 26
         targetSdkVersion 37
-        versionCode 19
-        versionName "1.6.3"
+        versionCode 38
+        versionName "1.9.0"
         buildConfigField "int", "SERVICE_VERSION", "1"
     }
 
@@ -32,6 +32,8 @@ dependencies {
     // AndroidX annotation —— libxposed:service 传递依赖。仅这一个 androidx 工件,保持最小依赖。
     implementation "androidx.annotation:annotation:1.7.1"
     compileOnly "io.github.libxposed:api:102.0.0"
+    // classic Xposed API — 仅 system_server 通道的 xposed/SystemUserService.java 用,
+    // attachApplicationLocked hook. Modern API 模块主流程不依赖。
     compileOnly "de.robv.android.xposed:api:82"
     // libxposed service (Modern API 101) — 用于模块 app 检测自身激活状态。
     // 框架会在把本模块装入 scope 内的进程时,通过 binder 把 XposedService 发送到模块 app。

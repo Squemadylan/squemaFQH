@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.byterax.phoenix.read.cherrygram.CherryGramVipHook;
 import com.byterax.phoenix.read.quark.QuarkHookMain;
 import com.byterax.phoenix.read.xiaox.XiaoXVipHook;
-import com.byterax.phoenix.read.xposed.SystemBootstrap;
 import com.byterax.phoenix.read.HookStatusFiles;
 import com.byterax.phoenix.read.HookStatusReporter;
 
