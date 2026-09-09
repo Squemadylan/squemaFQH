@@ -60,7 +60,11 @@ public final class CherryGramVipHook {
     /** SimpleHookR 12.10.1/70380 规则（兜底）。 */
     private static final String LEGACY_CLASS = "m";
     private static final String[] LEGACY_METHOD_NAMES = {
-            "\u2CD3", "\u0A99", "\u3415", "\u3879", "\u0446", "\u3ADC"
+            // 实测 Cherrygram 12.10.1/70380 m 类：\u2CD3() \u0AB9(long) \u3415(long)
+            // \u3879(long) \u0446() \u3ADC()，原先 \u0A99 是错的 codepoint（ઙ）
+            // — SimpleHookR 写的是 U+0AB9 Gujarati Letter HA with nukta (હ)，
+            // 与 U+0A99 Letter HA (ઙ) 是两个不同字符但 UTF-8 字节只差 1 字节
+            "\u2CD3", "\u0AB9", "\u3415", "\u3879", "\u0446", "\u3ADC"
     };
     private static final Class<?>[][] LEGACY_PARAM_TYPES = {
             new Class<?>[0],
