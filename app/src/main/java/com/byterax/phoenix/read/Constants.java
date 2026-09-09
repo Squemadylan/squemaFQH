@@ -4,6 +4,11 @@ public final class Constants {
     public static final String MODULE_PACKAGE = "com.byterax.phoenix.read";
     public static final String PKG_FANQIE = "com.dragon.read";
     public static final String PKG_HONGGUO = "com.phoenix.read";
+    public static final String PKG_QUARK = "com.quark.browser";
+    /** 小X分身（应用多开 App），VIP 判定在 native UserCache，见 xiaox/XiaoXVipHook。 */
+    public static final String PKG_XIAOX = "com.bly.dkplat";
+    /** Cherrygram (Telegram fork), donate/premium unlock via SimpleHookR rules. */
+    public static final String PKG_CHERRYGRAM = "uz.unnarsx.cherrygram";
     public static final String ANDROID_PACKAGE = "android";
 
     /** Registered in system_server via Xposed; target hooks report status here. */

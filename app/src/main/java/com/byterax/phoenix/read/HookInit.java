@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.byterax.phoenix.read.cherrygram.CherryGramVipHook;
 import com.byterax.phoenix.read.xposed.SystemBootstrap;
 import com.byterax.phoenix.read.HookStatusFiles;
 
@@ -47,8 +48,9 @@ public class HookInit extends XposedModule {
     // dexdump. The VipInfoModel constructor signature is identical:
     //   (String,String,String,boolean,boolean,int,boolean,VipCommonSubType)
     //  = (expireTime,isVip,leftTime,isAutoCharge,isUnionVip,unionSource,isAdVip,subType)
-    private static final String PKG_FANQIE = "com.dragon.read";
-    private static final String PKG_HONGGUO = "com.phoenix.read";
+    private static final String PKG_FANQIE = Constants.PKG_FANQIE;
+    private static final String PKG_HONGGUO = Constants.PKG_HONGGUO;
+    private static final String PKG_CHERRYGRAM = Constants.PKG_CHERRYGRAM;
 
     private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
 
@@ -80,6 +82,14 @@ public class HookInit extends XposedModule {
         } else if (PKG_HONGGUO.equals(pkg)) {
             HookStatusFiles.markTargetHooked(pkg);
             installHooks(PKG_HONGGUO, param.getClassLoader(), /*fullSet=*/ false);
+        } else if (PKG_CHERRYGRAM.equals(pkg)) {
+            ClassLoader loader = param.getClassLoader();
+            if (loader == null) {
+                loader = param.getDefaultClassLoader();
+            }
+            Log.i(TAG, "onPackageReady cherrygram loader="
+                    + (loader == null ? "null" : loader.getClass().getName()));
+            CherryGramVipHook.installFromModern(this, loader);
         }
     }
 

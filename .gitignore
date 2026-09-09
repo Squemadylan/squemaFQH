@@ -44,3 +44,7 @@ captures/
 # Log / OS files
 *.log
 .DS_Store
+._*
+
+# Upstream reference materials (not part of this module)
+cherrygram_vip_hook/
