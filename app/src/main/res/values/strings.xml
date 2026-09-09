@@ -1,23 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Squema Hook</string>
-    <string name="appbar_subtitle">番茄 / 红果 / 夸克 / 小X / Cherrygram</string>
-
-    <string name="status_channel_ready">Hook 通道已连接</string>
-    <string name="status_channel_off">Hook 通道未连接</string>
-    <string name="status_runtime_summary">libxposed:%1$s / Zygisk:%2$s / root:%3$s</string>
-    <string name="status_service_off">未检测到 libxposed / Zygisk / root</string>
-    <string name="status_hint">LSPosed / Zygisk / root 至少需要一个。如果系统确实装着但仍显示灰，请检查 apk 是否被加密或 SELinux 拒绝 stat 路径。</string>
-
-    <!-- 5 张卡片标题（与 HookInit.PKG_* 对应） -->
-    <string name="target_fanqie_title">番茄小说</string>
-    <string name="target_fanqie_subtitle">com.dragon.read</string>
-    <string name="target_hongguo_title">红果短剧</string>
-    <string name="target_hongguo_subtitle">com.phoenix.read</string>
-    <string name="target_quark_title">夸克浏览器</string>
-    <string name="target_quark_subtitle">com.quark.browser</string>
-    <string name="target_xiaox_title">小X分身</string>
-    <string name="target_xiaox_subtitle">com.bly.dkplat</string>
-    <string name="target_cherrygram_title">Cherrygram</string>
-    <string name="target_cherrygram_subtitle">uz.unnarsx.cherrygram</string>
+    <string name="xposed_description">番茄小说 / 红果短剧解锁，夸克增强，一模块集中管理。</string>
+    <string name="brand_title">Squema</string>
+    <string name="brand_subtitle">番茄 · 红果 · 夸克 · 小X</string>
+    <string name="target_fanqie">番茄小说</string>
+    <string name="target_hongguo">红果短剧</string>
+    <string name="target_quark">夸克</string>
+    <string name="target_xiaox">小X分身</string>
+    <string name="status_hooked">已 Hook</string>
+    <string name="status_live">运行中</string>
+    <string name="status_scoped">已勾选</string>
+    <string name="status_not_hooked">未勾选</string>
+    <string name="status_chip_on">LIVE</string>
+    <string name="status_chip_scope">SCOPE</string>
+    <string name="status_chip_off">IDLE</string>
+    <string name="status_chip_open">设置</string>
+    <string name="status_hint">未勾选=灰；已勾选=金 SCOPE；运行中=金 LIVE。以 LSPosed 作用域为准，取消勾选后会立即变灰。</string>
+    <string name="status_hint_no_service">未读到作用域。请在 LSPosed 启用本模块并勾选目标后，强停本 App 再开。</string>
+    <string name="xposed_activated">Xposed: 已激活</string>
 </resources>

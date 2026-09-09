@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主题色：黑金 -->
-    <color name="colorPrimary">#009688</color>
-    <color name="colorPrimaryDark">#00796B</color>
-    <color name="colorAccent">#FF9800</color>
+    <color name="colorPrimary">#C9A84B</color>
+    <color name="colorPrimaryDark">#0A0A0A</color>
+    <color name="colorAccent">#D4B86A</color>
 
-    <!-- v1.9.0 黑金主题色 -->
-    <color name="atmosphere_base">#0A0A0F</color>
-    <color name="gold_primary">#C9A961</color>
-    <color name="gold_dim">#8B7746</color>
-    <color name="gold_glow">#E8C97A</color>
+    <color name="bg_void">#0A0A0A</color>
+    <color name="bg_deep">#111111</color>
 
-    <!-- 状态 -->
-    <color name="status_inactive">#9E9E9E</color>
-    <color name="status_active">#009688</color>
+    <color name="gold_bright">#E8D5A3</color>
+    <color name="gold_primary">#C9A84B</color>
+    <color name="gold_mid">#B8963E</color>
+    <color name="gold_deep">#8A7340</color>
+    <color name="gold_dim">#5C5338</color>
+    <color name="gold_glow">#28C9A84B</color>
 
-    <!-- 卡片文字 -->
-    <color name="card_text_primary">#F5E9C9</color>
-    <color name="card_text_secondary">#9B8C6E</color>
-    <color name="card_text_chip">#7A6D4F</color>
+    <color name="text_primary">#F2EDE4</color>
+    <color name="text_secondary">#A89F8E</color>
+    <color name="text_gold">#D4B86A</color>
+    <color name="text_muted">#6E675A</color>
 
-    <!-- appbar / hint -->
-    <color name="appbar_title">#E8C97A</color>
-    <color name="appbar_subtitle">#9B8C6E</color>
-    <color name="hint_text">#6B5E45</color>
+    <color name="status_inactive">#3A3A3C</color>
+    <color name="status_active">#C9A84B</color>
+    <color name="status_active_soft">#D4B86A</color>
+    <color name="status_active_text">#E8D5A3</color>
 </resources>

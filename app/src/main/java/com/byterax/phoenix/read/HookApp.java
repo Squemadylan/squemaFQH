@@ -1,10 +1,14 @@
 package com.byterax.phoenix.read;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.github.libxposed.service.XposedService;
 import io.github.libxposed.service.XposedServiceHelper;
@@ -12,18 +16,21 @@ import io.github.libxposed.service.XposedServiceHelper;
 /**
  * Application entry that exposes the module's activation status to the UI.
  *
- * <p>Modern libxposed API 102 detects activation via the {@link XposedService}
- * IPC channel. The LSPosed Manager app (or any compatible manager that
- * implements the service registration) sends a binder to the module app
- * when the framework loads the module into a scoped process.
- *
- * <p>Limitation: if the framework variant doesn't ship a manager app (e.g.
- * APatch + Zygisk LSPosed without the LSPosed Manager package), the service
- * is never bound and the module app cannot programmatically detect activation.
- * In that case the user must verify via logcat or the activation Toast.
+ * <p>Modern libxposed API detects activation via {@link XposedService}.
+ * When bound, the module app can read {@link XposedService#getScope()} and
+ * (API 102+) {@code getRunningTargets()} — the same channel other modern
+ * modules use to light their status UI.
  */
 public class HookApp extends Application {
     private static final String TAG = "SquemaFQHook";
+
+    public interface StatusListener {
+        void onXposedStatusChanged();
+    }
+
+    private static volatile HookApp instance;
+    private final CopyOnWriteArrayList<StatusListener> listeners = new CopyOnWriteArrayList<>();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Nullable
     private volatile XposedService xposedService;
@@ -31,6 +38,7 @@ public class HookApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         try {
             XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
                 @Override
@@ -38,13 +46,15 @@ public class HookApp extends Application {
                     xposedService = service;
                     Log.i(TAG, "XposedService bound: " + service.getFrameworkName()
                             + " v" + service.getFrameworkVersion()
-                            + " scope=" + service.getScope());
+                            + " scope=" + safeScope(service));
+                    notifyStatusChanged();
                 }
 
                 @Override
                 public void onServiceDied(@NonNull XposedService service) {
                     xposedService = null;
                     Log.w(TAG, "XposedService died");
+                    notifyStatusChanged();
                 }
             });
         } catch (Throwable t) {
@@ -52,15 +62,56 @@ public class HookApp extends Application {
         }
     }
 
+    public static void addStatusListener(StatusListener listener) {
+        HookApp app = instance;
+        if (app == null || listener == null) {
+            return;
+        }
+        app.listeners.addIfAbsent(listener);
+    }
+
+    public static void removeStatusListener(StatusListener listener) {
+        HookApp app = instance;
+        if (app == null || listener == null) {
+            return;
+        }
+        app.listeners.remove(listener);
+    }
+
+    private void notifyStatusChanged() {
+        mainHandler.post(() -> {
+            for (StatusListener listener : listeners) {
+                try {
+                    listener.onXposedStatusChanged();
+                } catch (Throwable ignored) {
+                }
+            }
+        });
+    }
+
+    private static String safeScope(XposedService service) {
+        try {
+            return String.valueOf(service.getScope());
+        } catch (Throwable t) {
+            return "<error>";
+        }
+    }
+
     @Nullable
     public static XposedService getXposedService() {
+        HookApp app = instance;
+        if (app != null) {
+            return app.xposedService;
+        }
         try {
-            HookApp app = (HookApp) Class.forName("android.app.ActivityThread")
+            Application current = (Application) Class.forName("android.app.ActivityThread")
                     .getDeclaredMethod("currentApplication")
                     .invoke(null);
-            return app != null ? app.xposedService : null;
-        } catch (Throwable t) {
-            return null;
+            if (current instanceof HookApp) {
+                return ((HookApp) current).xposedService;
+            }
+        } catch (Throwable ignored) {
         }
+        return null;
     }
 }

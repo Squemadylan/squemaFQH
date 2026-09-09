@@ -56,6 +56,12 @@ public final class HookStatusStore {
         if (Constants.PKG_QUARK.equals(pkg)) {
             return "quark";
         }
+        if (Constants.PKG_XIAOX.equals(pkg)) {
+            return "xiaox";
+        }
+        if (Constants.PKG_CHERRYGRAM.equals(pkg)) {
+            return "cherrygram";
+        }
         return "pkg_" + pkg.hashCode();
     }
 }

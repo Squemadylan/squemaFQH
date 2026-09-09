@@ -37,20 +37,6 @@ public final class HookStatusFiles {
         }
     }
 
-    public static void clearTarget(String pkg) {
-        if (Constants.PKG_FANQIE.equals(pkg)) {
-            FANQIE_TMP.delete();
-        } else if (Constants.PKG_HONGGUO.equals(pkg)) {
-            HONGGUO_TMP.delete();
-        } else if (Constants.PKG_QUARK.equals(pkg)) {
-            QUARK_TMP.delete();
-        } else if (Constants.PKG_XIAOX.equals(pkg)) {
-            XIAOX_TMP.delete();
-        } else if (Constants.PKG_CHERRYGRAM.equals(pkg)) {
-            CHERRYGRAM_TMP.delete();
-        }
-    }
-
     public static boolean isSystemReady() {
         return SYSTEM_TMP.exists() && SYSTEM_TMP.length() > 0;
     }
@@ -75,17 +61,42 @@ public final class HookStatusFiles {
         return CHERRYGRAM_TMP.exists() && CHERRYGRAM_TMP.length() > 0;
     }
 
+    public static void clearTarget(String pkg) {
+        if (Constants.PKG_FANQIE.equals(pkg)) {
+            deleteQuietly(FANQIE_TMP);
+        } else if (Constants.PKG_HONGGUO.equals(pkg)) {
+            deleteQuietly(HONGGUO_TMP);
+        } else if (Constants.PKG_QUARK.equals(pkg)) {
+            deleteQuietly(QUARK_TMP);
+        } else if (Constants.PKG_XIAOX.equals(pkg)) {
+            deleteQuietly(XIAOX_TMP);
+        } else if (Constants.PKG_CHERRYGRAM.equals(pkg)) {
+            deleteQuietly(CHERRYGRAM_TMP);
+        }
+    }
+
+    private static void deleteQuietly(File file) {
+        try {
+            if (file != null && file.exists() && !file.delete()) {
+                writeFile(file, "");
+                // empty file still counts as hooked via length()>0 check — force delete
+                // by truncating then rename; if delete failed, overwrite with zero bytes
+                // and rely on length check: length 0 → not hooked. Good.
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     public static boolean isChannelAlive() {
         return isSystemReady() || isFanqieHooked() || isHongguoHooked()
-                || isQuarkHooked() || isXiaoxHooked() || isCherrygramHooked();
+                || isQuarkHooked() || isXiaoxHooked();
     }
 
     public static String getTargetsSummary() {
         return "\u756a\u8304 " + (isFanqieHooked() ? "\u2713" : "\u2014")
                 + "  /  \u7ea2\u679c " + (isHongguoHooked() ? "\u2713" : "\u2014")
-                + "  /  \u8d5e\u514b " + (isQuarkHooked() ? "\u2713" : "\u2014")
-                + "  /  \u5c0fX " + (isXiaoxHooked() ? "\u2713" : "\u2014")
-                + "  /  CG " + (isCherrygramHooked() ? "\u2713" : "\u2014");
+                + "  /  \u5938\u514b " + (isQuarkHooked() ? "\u2713" : "\u2014")
+                + "  /  \u5c0fX " + (isXiaoxHooked() ? "\u2713" : "\u2014");
     }
 
     private static void writeFile(File file, String content) {

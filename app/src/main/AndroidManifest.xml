@@ -1,10 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <queries>
+        <package android:name="com.dragon.read" />
+        <package android:name="com.phoenix.read" />
+        <package android:name="com.quark.browser" />
+    </queries>
+
     <application
         android:name=".HookApp"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:description="@string/xposed_description"
         android:resizeableActivity="true"
         android:theme="@style/AppTheme">
 
@@ -17,9 +24,19 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".quark.QuarkSettingsActivity"
+            android:exported="false"
+            android:label="@string/target_quark" />
+
         <provider
             android:name=".service.ServiceProvider"
             android:authorities="${applicationId}.ServiceProvider"
+            android:exported="true" />
+
+        <provider
+            android:name=".quark.QuarkConfigProvider"
+            android:authorities="${applicationId}.quark"
             android:exported="true" />
     </application>
 

@@ -1,20 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_frame"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_noir_gold_atmosphere"
+    android:background="@color/bg_void"
     android:fitsSystemWindows="true">
 
     <View
+        android:id="@+id/atmosphere_layer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_noir_gold_atmosphere" />
+
+    <View
+        android:id="@+id/glass_blur_layer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#08000000" />
 
     <View
+        android:id="@+id/vignette_layer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.35"
         android:background="@drawable/bg_vignette"
+        android:alpha="0.35"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/grain_layer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.04"
+        android:importantForAccessibility="no"
         android:visibility="gone" />
 
     <ScrollView
@@ -25,6 +42,7 @@
         android:scrollbars="none">
 
         <LinearLayout
+            android:id="@+id/content_column"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -32,28 +50,28 @@
             android:paddingBottom="32dp">
 
             <TextView
-                android:id="@+id/appbar_title"
+                android:id="@+id/brand_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.02"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:text="@string/app_name"
-                android:textColor="@color/appbar_title"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.02"
+                android:text="@string/brand_title"
+                android:textColor="@color/text_primary"
                 android:textSize="28sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/appbar_subtitle"
+                android:id="@+id/brand_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:fontFamily="sans-serif"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:text="@string/appbar_subtitle"
-                android:textColor="@color/appbar_subtitle"
+                android:fontFamily="sans-serif"
+                android:text="@string/brand_subtitle"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
             <View
@@ -80,22 +98,18 @@
                 android:id="@+id/card_xiaox"
                 layout="@layout/view_status_card" />
 
-            <include
-                android:id="@+id/card_cherrygram"
-                layout="@layout/view_status_card" />
-
             <TextView
                 android:id="@+id/hint_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:fontFamily="sans-serif"
-                android:lineSpacingExtra="3dp"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:text="@string/status_hint"
-                android:textColor="@color/hint_text"
+                android:fontFamily="sans-serif"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/text_muted"
                 android:textSize="12sp" />
+
         </LinearLayout>
     </ScrollView>
 </FrameLayout>
