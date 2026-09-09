@@ -1,8 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 主题色：黑金 -->
     <color name="colorPrimary">#009688</color>
     <color name="colorPrimaryDark">#00796B</color>
     <color name="colorAccent">#FF9800</color>
+
+    <!-- v1.9.0 黑金主题色 -->
+    <color name="atmosphere_base">#0A0A0F</color>
+    <color name="gold_primary">#C9A961</color>
+    <color name="gold_dim">#8B7746</color>
+    <color name="gold_glow">#E8C97A</color>
+
+    <!-- 状态 -->
     <color name="status_inactive">#9E9E9E</color>
     <color name="status_active">#009688</color>
+
+    <!-- 卡片文字 -->
+    <color name="card_text_primary">#F5E9C9</color>
+    <color name="card_text_secondary">#9B8C6E</color>
+    <color name="card_text_chip">#7A6D4F</color>
+
+    <!-- appbar / hint -->
+    <color name="appbar_title">#E8C97A</color>
+    <color name="appbar_subtitle">#9B8C6E</color>
+    <color name="hint_text">#6B5E45</color>
 </resources>

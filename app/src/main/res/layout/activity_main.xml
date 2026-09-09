@@ -1,52 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-
     android:layout_height="match_parent"
-
-    android:fillViewport="true"
-
+    android:background="@drawable/bg_noir_gold_atmosphere"
     android:fitsSystemWindows="true">
 
-
-
-    <LinearLayout
-
+    <View
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#08000000" />
 
-        android:layout_height="wrap_content"
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.35"
+        android:background="@drawable/bg_vignette"
+        android:visibility="gone" />
 
-        android:orientation="vertical"
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none">
 
-        android:paddingBottom="24dp">
-
-
-
-        <include layout="@layout/view_status_card" />
-
-
-
-        <TextView
-
-            android:id="@+id/hint_text"
-
+        <LinearLayout
             android:layout_width="match_parent"
-
             android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="36dp"
+            android:paddingBottom="32dp">
 
-            android:paddingStart="24dp"
+            <TextView
+                android:id="@+id/appbar_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.02"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:text="@string/app_name"
+                android:textColor="@color/appbar_title"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
-            android:paddingEnd="24dp"
+            <TextView
+                android:id="@+id/appbar_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:text="@string/appbar_subtitle"
+                android:textColor="@color/appbar_subtitle"
+                android:textSize="13sp" />
 
-            android:textColor="#666666"
+            <View
+                android:layout_width="40dp"
+                android:layout_height="1dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_gold_divider" />
 
-            android:textSize="13sp" />
+            <include
+                android:id="@+id/card_fanqie"
+                layout="@layout/view_status_card" />
 
+            <include
+                android:id="@+id/card_hongguo"
+                layout="@layout/view_status_card" />
 
+            <include
+                android:id="@+id/card_quark"
+                layout="@layout/view_status_card" />
 
-    </LinearLayout>
+            <include
+                android:id="@+id/card_xiaox"
+                layout="@layout/view_status_card" />
 
-</ScrollView>
+            <include
+                android:id="@+id/card_cherrygram"
+                layout="@layout/view_status_card" />
 
+            <TextView
+                android:id="@+id/hint_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="sans-serif"
+                android:lineSpacingExtra="3dp"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:text="@string/status_hint"
+                android:textColor="@color/hint_text"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

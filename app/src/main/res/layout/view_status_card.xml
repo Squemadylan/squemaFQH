@@ -1,32 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/status_card_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    android:background="@drawable/status_card_bg"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
+    android:layout_marginStart="20dp"
+    android:layout_marginEnd="20dp"
+    android:layout_marginBottom="12dp"
+    android:background="@drawable/bg_glass_card_idle"
     android:padding="20dp">
 
+    <View
+        android:id="@+id/status_card_orb"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="start|center_vertical"
+        android:background="@drawable/bg_icon_orb" />
+
     <TextView
-        android:id="@+id/status_card_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="28sp" />
+        android:id="@+id/status_card_emoji"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="start|center_vertical"
+        android:gravity="center"
+        android:textColor="@color/card_text_primary"
+        android:textSize="20sp"
+        android:importantForAccessibility="no" />
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_weight="1"
+        android:layout_marginStart="52dp"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/status_card_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
+            android:textColor="@color/card_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -35,17 +45,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/card_text_secondary"
             android:textSize="13sp" />
 
         <TextView
             android:id="@+id/status_card_targets"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@android:color/white"
-            android:textSize="13sp"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/card_text_chip"
+            android:textSize="12sp"
             android:visibility="gone" />
-
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

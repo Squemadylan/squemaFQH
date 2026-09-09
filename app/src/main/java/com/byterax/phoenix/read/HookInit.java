@@ -43,6 +43,26 @@ import io.github.libxposed.api.XposedModuleInterface;
 public class HookInit extends XposedModule {
     private static final String TAG = "SquemaFQHook";
 
+    /**
+     * LSPosed 1.9.2 (v7024) currently requires this 2-arg constructor at module-load time
+     * (it reflectively looks up {@code <init>(XposedInterface, XposedModuleInterface$ModuleLoadedParam)}
+     * even for {@code targetApiVersion=102}). Newer LSPosed builds that fully adopt API 102
+     * use a no-arg constructor instead and call {@code attachFramework} automatically.
+     *
+     * <p>We provide both to stay compatible across framework versions: this one delegates
+     * to the parent and ignores the parameters (the framework handles framework attachment).
+     * The default no-arg constructor below covers API 102 strict mode.</p>
+     */
+    public HookInit(XposedInterface base, XposedModuleInterface.ModuleLoadedParam param) {
+        super();
+    }
+
+    /** API 102 no-arg constructor. */
+    public HookInit() {
+        super();
+    }
+
+
     // Target packages: ???? (full hook set) + ???? (SVIP + name only).
     // ???? internally reuses ??'s com.dragon.read.* core classes ? verified by
     // dexdump. The VipInfoModel constructor signature is identical:
