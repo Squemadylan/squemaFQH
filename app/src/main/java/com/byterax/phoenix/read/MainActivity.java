@@ -28,6 +28,7 @@ public class MainActivity extends Activity implements HookApp.StatusListener {
     private View cardHongguo;
     private View cardQuark;
     private View cardXiaox;
+    private View cardCherrygram;
     private TextView hintText;
     private boolean entrancePlayed;
 
@@ -46,6 +47,7 @@ public class MainActivity extends Activity implements HookApp.StatusListener {
         cardHongguo = findViewById(R.id.card_hongguo);
         cardQuark = findViewById(R.id.card_quark);
         cardXiaox = findViewById(R.id.card_xiaox);
+        cardCherrygram = findViewById(R.id.card_cherrygram);
         hintText = findViewById(R.id.hint_text);
 
         if (cardQuark != null) {
@@ -113,7 +115,9 @@ public class MainActivity extends Activity implements HookApp.StatusListener {
 
     private void prepareEntrance() {
         View[] views = {
-                brandTitle, brandSubtitle, cardFanqie, cardHongguo, cardQuark, cardXiaox, hintText
+                brandTitle, brandSubtitle,
+                cardFanqie, cardHongguo, cardQuark, cardXiaox, cardCherrygram,
+                hintText
         };
         for (View view : views) {
             if (view == null) {
@@ -126,7 +130,9 @@ public class MainActivity extends Activity implements HookApp.StatusListener {
 
     private void playEntrance() {
         View[] views = {
-                brandTitle, brandSubtitle, cardFanqie, cardHongguo, cardQuark, cardXiaox, hintText
+                brandTitle, brandSubtitle,
+                cardFanqie, cardHongguo, cardQuark, cardXiaox, cardCherrygram,
+                hintText
         };
         long delay = 40L;
         for (int i = 0; i < views.length; i++) {
@@ -146,15 +152,17 @@ public class MainActivity extends Activity implements HookApp.StatusListener {
     }
 
     private void refreshCards() {
-        ScopeStatus.State fanqie = ScopeStatus.resolve(this, Constants.PKG_FANQIE);
-        ScopeStatus.State hongguo = ScopeStatus.resolve(this, Constants.PKG_HONGGUO);
-        ScopeStatus.State quark = ScopeStatus.resolve(this, Constants.PKG_QUARK);
-        ScopeStatus.State xiaox = ScopeStatus.resolve(this, Constants.PKG_XIAOX);
+        ScopeStatus.State fanqie     = ScopeStatus.resolve(this, Constants.PKG_FANQIE);
+        ScopeStatus.State hongguo    = ScopeStatus.resolve(this, Constants.PKG_HONGGUO);
+        ScopeStatus.State quark      = ScopeStatus.resolve(this, Constants.PKG_QUARK);
+        ScopeStatus.State xiaox      = ScopeStatus.resolve(this, Constants.PKG_XIAOX);
+        ScopeStatus.State cherrygram = ScopeStatus.resolve(this, Constants.PKG_CHERRYGRAM);
 
-        bindCard(cardFanqie, getString(R.string.target_fanqie), fanqie, false);
-        bindCard(cardHongguo, getString(R.string.target_hongguo), hongguo, false);
-        bindCard(cardQuark, getString(R.string.target_quark), quark, true);
-        bindCard(cardXiaox, getString(R.string.target_xiaox), xiaox, false);
+        bindCard(cardFanqie,     getString(R.string.target_fanqie),     fanqie,     false);
+        bindCard(cardHongguo,    getString(R.string.target_hongguo),    hongguo,    false);
+        bindCard(cardQuark,      getString(R.string.target_quark),      quark,      true);
+        bindCard(cardXiaox,      getString(R.string.target_xiaox),      xiaox,      false);
+        bindCard(cardCherrygram, getString(R.string.target_cherrygram), cherrygram, false);
 
         if (hintText != null) {
             hintText.setVisibility(View.VISIBLE);

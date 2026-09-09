@@ -98,6 +98,10 @@
                 android:id="@+id/card_xiaox"
                 layout="@layout/view_status_card" />
 
+            <include
+                android:id="@+id/card_cherrygram"
+                layout="@layout/view_status_card" />
+
             <TextView
                 android:id="@+id/hint_text"
                 android:layout_width="match_parent"
