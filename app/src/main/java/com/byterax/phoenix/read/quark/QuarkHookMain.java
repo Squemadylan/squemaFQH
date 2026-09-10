@@ -12,7 +12,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /* JADX INFO: loaded from: /private/tmp/quark_apk/unpacked/classes.dex */
 public class QuarkHookMain {
-    private static final String TAG = "[SquemaQuark]";
+    // Mirrors Config.TAG (which is private to that class) so this class can use
+    // the same tag for android.util.Log calls. Single source of truth lives in
+    // Config; update both if you change the logcat tag for this feature.
+    private static final String TAG = "SquemaQuark";
     private static final String TARGET = "com.quark.browser";
     private static volatile Context sAppContext;
     private static final AtomicBoolean TICKER_STARTED = new AtomicBoolean(false);
@@ -55,7 +58,7 @@ public class QuarkHookMain {
         QuarkHooks.log("[SquemaQuark] hooking com.quark.browser via=" + via
                 + " enable=" + Config.masterEnabled()
                 + " loader=" + classLoader.getClass().getName());
-        android.util.Log.i("SquemaQuark", "hooking com.quark.browser via=" + via);
+        android.util.Log.i(TAG, "hooking com.quark.browser via=" + via);
         Config.logI("QuarkHook", "模块已加载，开始 hook com.quark.browser via=" + via);
         hookVoid(classLoader, "com.ucpro.feature.urlsecurity.UrlScanManager", "u");
         hookFalse(classLoader, "com.ucpro.feature.urlsecurity.UrlScanManager", "p");

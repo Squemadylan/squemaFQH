@@ -26,8 +26,8 @@ public class QuarkConfigProvider extends ContentProvider {
     public static final String METHOD_SET_STRING = "set_string";
     public static final String KEY_STAMP = "stamp";
 
-    private static final String PREFS = "quark_config_v1";
-    private static final String ACTIVE_PREFS = "quark_active_v1";
+    private static final String PREFS = "pref_quark_config_v1";
+    private static final String ACTIVE_PREFS = "pref_quark_active_v1";
     private static final String ACTIVE_KEY = "stamp";
 
     @Override
