@@ -1,11 +1,6 @@
 package com.byterax.phoenix.read;
 
-import android.annotation.SuppressLint;
-import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
@@ -75,8 +70,6 @@ public class HookInit extends XposedModule {
     private static final String PKG_QUARK = Constants.PKG_QUARK;
     private static final String PKG_XIAOX = Constants.PKG_XIAOX;
     private static final String PKG_CHERRYGRAM = Constants.PKG_CHERRYGRAM;
-
-    private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
 
     // 113143670061000L ms ? 5355 years. Reported magic number from HookVip.
     private static final long FAKE_EXPIRE_MS = 113143670061000L;
@@ -253,7 +246,8 @@ public class HookInit extends XposedModule {
                                 args[i] = 1000000;
                             }
                         }
-                        showHookSuccessToast();
+                        // Toast removed — see MainActivity status cards for hook status.
+                        // Constructors fire N times per process; toast spam was noise.
                         return chain.proceed(args);
                     });
         }
@@ -551,34 +545,6 @@ public class HookInit extends XposedModule {
         } catch (Throwable t) {
             log(Log.ERROR, TAG, "Hook [" + name + "] failed", t);
         }
-    }
-
-    private static void showHookSuccessToast() {
-        if (!TOAST_SHOWN.compareAndSet(false, true)) {
-            return;
-        }
-        Application application = getCurrentApplication();
-        if (application == null) {
-            return;
-        }
-        new Handler(Looper.getMainLooper()).post(() ->
-                Toast.makeText(application, "\u756a\u8304\u7ea2\u679c VIP Hook \u6210\u529f", Toast.LENGTH_SHORT).show());
-    }
-
-    private static Application getCurrentApplication() {
-        try {
-            @SuppressLint("PrivateApi")
-            Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
-            @SuppressLint("DiscouragedPrivateApi")
-            Object application = activityThreadClass
-                    .getDeclaredMethod("currentApplication")
-                    .invoke(null);
-            if (application instanceof Application) {
-                return (Application) application;
-            }
-        } catch (ReflectiveOperationException ignored) {
-        }
-        return null;
     }
 
     private static void setField(Object target, String fieldName, Object value)

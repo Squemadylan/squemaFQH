@@ -1,10 +1,6 @@
 package com.byterax.phoenix.read.cherrygram;
 
-import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
@@ -87,7 +83,6 @@ public final class CherryGramVipHook {
     /** 强制返回的常量。集中在这里方便审计 —— 这就是 hook 的实际行为。 */
     private static final Object RETURN_TRUE = Boolean.TRUE;
 
-    private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
     private static final AtomicBoolean INSTALLED = new AtomicBoolean(false);
 
     private CherryGramVipHook() {}
@@ -118,7 +113,7 @@ public final class CherryGramVipHook {
                 + " hook(s)  legacy=" + legacyHits + "/6");
 
         if (primaryHits > 0) {
-            showHookSuccessToast();
+            // Toast removed — status surfaced via MainActivity card + logcat only.
         } else if (legacyHits == 0) {
             Log.w(TAG, "[Cherrygram] !!! ALL HOOKS FAILED — Cherrygram 源码可能改版，"
                     + "需要到 github.com/arsLan4k1390/Cherrygram 重新对 didUserDonate* 签名");
@@ -259,21 +254,7 @@ public final class CherryGramVipHook {
         try { bridge.close(); } catch (Throwable ignored) {}
     }
 
-    /** 跨进程跑：主线程弹 Toast。失败静默 —— hook 成功与否不应依赖 UI 提示。 */
-    private static void showHookSuccessToast() {
-        if (!TOAST_SHOWN.compareAndSet(false, true)) return;
-        try {
-            Class<?> at = Class.forName("android.app.ActivityThread");
-            Object app = at.getDeclaredMethod("currentApplication").invoke(null);
-            if (!(app instanceof Application)) return;
-            Application a = (Application) app;
-            new Handler(Looper.getMainLooper()).post(() ->
-                    Toast.makeText(a, "CherryGram VIP Hook 成功",
-                            Toast.LENGTH_SHORT).show());
-        } catch (Throwable ignored) {
-            // Toast 失败不影响 hook 实际生效
-        }
-    }
+    /** Toast 跨进程提示已删除 —— 状态通过 MainActivity 状态卡片 + logcat 输出。 */
 
     /** 把参数类型数组渲染成简短签名（"long, Context"），用于日志可读性。 */
     private static String paramSig(Class<?>[] ps) {

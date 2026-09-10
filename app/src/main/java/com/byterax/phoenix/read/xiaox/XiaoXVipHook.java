@@ -39,7 +39,6 @@ public final class XiaoXVipHook {
      */
     private static final int VIP_LEVEL = 2;
 
-    private static final AtomicBoolean TOAST_SHOWN = new AtomicBoolean(false);
     private static final AtomicBoolean INSTALLED_LOADER = new AtomicBoolean(false);
     private static final AtomicBoolean LAZY_STARTED = new AtomicBoolean(false);
 
@@ -60,7 +59,7 @@ public final class XiaoXVipHook {
             install(module, classLoader);
             Log.i(TAG, "[XiaoX] hooks installed");
             com.byterax.phoenix.read.HookStatusReporter.reportTargetHooked(TARGET_PKG);
-            showHookSuccessToast();
+            // Toast removed: user center onResume fires every navigation.
         } catch (Throwable t) {
             Log.e(TAG, "[XiaoX] install failed", t);
         }
@@ -101,7 +100,7 @@ public final class XiaoXVipHook {
         hookAfterPatchFields(module, userCache, "initCacheByApiResult");
 
         Log.i(TAG, "[XiaoX] UserCache hooks installed");
-        showHookSuccessToast();
+        // Toast removed: too noisy.
 
         // ============ 跨进程会员信息 AIDL：MemberInfo (Parcelable) ============
         // 用户中心 native 直读字段而非 getter，且 MemberInfo 每次 Parcel 反序列化都是新实例。
@@ -942,13 +941,6 @@ public final class XiaoXVipHook {
                 .intercept(chain -> result);
     }
 
-    private static void showHookSuccessToast() {
-        if (!TOAST_SHOWN.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            com.byterax.phoenix.read.InjectionToast.showOnce("\u5c0fX\u5206\u8eab VIP Hook \u6210\u529f");
-        } catch (Throwable ignored) {
-        }
-    }
+    // Toast removed: shown every install + every user-center onResume. Status now
+    // surfaced via MainActivity card + logcat only.
 }

@@ -157,10 +157,6 @@ public class QuarkHookMain {
             } catch (Throwable ignored) {
             }
         }
-        try {
-            com.byterax.phoenix.read.InjectionToast.showOnce("\u5938\u514b Hook \u6210\u529f");
-        } catch (Throwable ignored) {
-        }
     }
 
     private void startActiveStampTicker() {
